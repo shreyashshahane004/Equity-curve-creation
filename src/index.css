@@ -1,0 +1,296 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+  --primary: #FF6B6B;      /* Happy Red/Coral */
+  --secondary: #4ECDC4;    /* Joyful Teal */
+  --accent: #FFE66D;       /* Sunny Yellow */
+  --background: #F7FFF7;   /* Very light mint/white */
+  --sidebar-bg: #FFFFFF;
+  --text-dark: #292F36;
+  --text-light: #666;
+  --border-radius: 24px;
+  --shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--background);
+  color: var(--text-dark);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 320px;
+  background-color: var(--sidebar-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.sidebar h2 {
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.month-card {
+  background-color: var(--background);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.month-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(78, 205, 196, 0.2);
+}
+
+.month-card.active {
+  border-color: var(--secondary);
+  background-color: rgba(78, 205, 196, 0.05);
+}
+
+.month-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.month-card-stats {
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+/* Main Area */
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--sidebar-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: relative;
+}
+
+.content-viewer {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empty-state {
+  margin: auto;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.empty-state img {
+  width: 150px;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.chart-container {
+  width: 100%;
+  height: 450px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px 20px 30px 10px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f3f4f6;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.chart-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  margin-left: 10px;
+}
+
+.data-table-container {
+  width: 100%;
+  margin-top: 30px;
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+  color: var(--secondary);
+  font-weight: 700;
+}
+
+/* Bottom Chat Input */
+.bottom-bar {
+  padding: 20px;
+  background-color: var(--background);
+  border-top: 1px solid rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.icon-btn {
+  background-color: var(--text-dark);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.05);
+  background-color: var(--primary);
+}
+
+.input-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border-radius: 50px;
+  padding: 5px 20px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
+  border: 1px solid #eee;
+  gap: 10px;
+}
+
+.chat-image-preview {
+  height: 36px;
+  border-radius: 8px;
+  object-fit: contain;
+  border: 1px solid #eee;
+  background: #f9f9f9;
+}
+
+.chat-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  padding: 10px 0;
+  font-family: inherit;
+  color: var(--text-dark);
+}
+
+.chat-input::placeholder {
+  color: #aaa;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.select-input {
+  padding: 10px 15px;
+  border-radius: 20px;
+  border: 1px solid #eee;
+  outline: none;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--text-dark);
+  background-color: white;
+}
+
+.action-btn {
+  background-color: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background-color: #3bbcb3;
+  transform: translateY(-2px);
+}
+
+.action-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: var(--border-radius);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
