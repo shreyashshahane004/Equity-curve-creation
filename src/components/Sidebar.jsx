@@ -1,56 +1,94 @@
 import React from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { BarChart2, LayoutGrid, Trash2 } from 'lucide-react';
 
-const Sidebar = ({ monthsData, currentSelection, onSelect, onDelete }) => {
+const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection, currentView }) => {
   return (
     <div className="sidebar">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <h2 style={{ fontSize: '1.3rem', margin: 0, color: 'var(--primary)', fontWeight: 800 }}>Monthly Gallery</h2>
+      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+        <h2 style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '1.4rem', marginBottom: '5px' }}>Equity Tracker</h2>
+        <div style={{ 
+          display: 'inline-block', 
+          background: 'rgba(78, 205, 196, 0.1)', 
+          color: 'var(--secondary)', 
+          padding: '4px 12px', 
+          borderRadius: '20px', 
+          fontSize: '0.85rem', 
+          fontWeight: 800 
+        }}>
+          {monthsData.length} Cases Recorded
+        </div>
+      </div>
+      
+      <div className="sidebar-menu">
         <button 
-          onClick={() => onSelect(null)}
-          style={{ background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' }}
-          title="Create New Entry"
+          className={`menu-item ${currentView === 'monthly' && !currentSelection ? 'active' : ''}`}
+          onClick={() => onNavigate('monthly')}
         >
-          <Plus size={16} strokeWidth={3} /> New
+          <BarChart2 size={20} />
+          Months EQ Curve
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'gallery' ? 'active' : ''}`}
+          onClick={() => onNavigate('gallery')}
+        >
+          <LayoutGrid size={20} />
+          Images of Curves
         </button>
       </div>
-      {monthsData.length === 0 ? (
-        <p style={{ color: 'var(--text-light)', textAlign: 'center', marginTop: '20px' }}>No months recorded yet.</p>
-      ) : (
-        monthsData.map((data, idx) => {
-          const isActive = currentSelection && currentSelection.id === data.id;
-          const finalR = data.data && data.data.length > 0 ? data.data[data.data.length - 1].cumulativeR : 0;
-          return (
-            <div 
-              key={data.id || idx} 
-              className={`month-card ${isActive ? 'active' : ''}`}
-              onClick={() => onSelect(data)}
-            >
-              <div className="month-card-header">
-                <span>{data.month} {data.year}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ color: finalR >= 0 ? 'var(--secondary)' : 'var(--primary)' }}>
-                    {finalR > 0 ? '+' : ''}{finalR}R
-                  </span>
+
+      <div className="sidebar-list">
+        {monthsData.length === 0 ? (
+          <p style={{ color: 'var(--text-light)', textAlign: 'center', marginTop: '20px', fontSize: '0.9rem' }}>No months recorded yet.</p>
+        ) : (
+          [...monthsData].sort((a, b) => {
+            const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const yearDiff = Number(a.year) - Number(b.year);
+            if (yearDiff !== 0) return yearDiff;
+            return MONTHS.indexOf(a.month) - MONTHS.indexOf(b.month);
+          }).map((data, idx) => {
+            const isActive = currentSelection && currentSelection.id === data.id && currentView === 'monthly';
+            const rValues = data.data ? data.data.map(d => d.cumulativeR) : [];
+            const endR = rValues.length > 0 ? rValues[rValues.length - 1] : 0;
+
+            return (
+              <div 
+                key={data.id} 
+                className={`month-card ${isActive ? 'active' : ''}`}
+                onClick={() => onSelect(data)}
+              >
+                <div className="month-card-header">
+                  <span>{data.month} {data.year}</span>
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(data.id);
                     }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ff6b6b', display: 'flex', padding: '2px' }}
-                    title="Delete Month"
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: isActive ? 'white' : '#ff6b6b',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      borderRadius: '4px'
+                    }}
+                    title="Delete"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  marginTop: '5px', 
+                  color: isActive ? 'rgba(255,255,255,0.9)' : (endR >= 0 ? 'var(--secondary)' : 'var(--primary)'),
+                  fontWeight: 700 
+                }}>
+                  Final: {endR > 0 ? '+' : ''}{endR}R
+                </div>
               </div>
-              <div className="month-card-stats">
-                Trades: {data.data ? data.data.length : 0}
-              </div>
-            </div>
-          );
-        })
-      )}
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };
