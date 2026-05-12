@@ -213,7 +213,7 @@ function App() {
               <h2>{selectedCaseForModal.month} {selectedCaseForModal.year} - Equity Curve</h2>
             </div>
             <div className="modal-body">
-              <MainArea currentSelection={selectedCaseForModal} isPreview={true} isExpanded={true} />
+              <MainArea key={selectedCaseForModal.id} currentSelection={selectedCaseForModal} isPreview={true} isExpanded={true} />
             </div>
           </div>
 
