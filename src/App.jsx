@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import MainArea from './components/MainArea';
 import { supabase } from './supabaseClient';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 function App() {
   const [monthsData, setMonthsData] = useState([]);
   const [currentSelection, setCurrentSelection] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [view, setView] = useState('monthly'); // 'monthly' or 'gallery'
+  const [selectedCaseForModal, setSelectedCaseForModal] = useState(null);
 
   // Fetch initial data from Supabase
   useEffect(() => {
@@ -26,7 +29,7 @@ function App() {
             month: item.month,
             year: item.year,
             imageUrl: item.image_url,
-            data: item.data
+            data: typeof item.data === 'string' ? JSON.parse(item.data) : (item.data || [])
           }));
           setMonthsData(formattedData);
         }
@@ -76,6 +79,54 @@ function App() {
     }
   };
 
+  const handleUpdateData = async (id, updatedData) => {
+    // 1. Instantly update UI (Optimistic Update)
+    setMonthsData((prev) => prev.map(m => m.id === id ? { ...m, ...updatedData } : m));
+    if (currentSelection && currentSelection.id === id) {
+      setCurrentSelection({ ...currentSelection, ...updatedData });
+    }
+
+    // 2. Save to Supabase
+    try {
+      const { error } = await supabase
+        .from('equity_curves')
+        .update({
+          month: updatedData.month,
+          year: updatedData.year,
+          image_url: updatedData.imageUrl,
+          data: updatedData.data
+        })
+        .eq('id', id);
+        
+      if (error) return error.message;
+      return null;
+    } catch (error) {
+      console.error('Error updating Supabase:', error.message);
+      return error.message;
+    }
+  };
+
+  const handleNavigate = (newView) => {
+    setView(newView);
+    if (newView === 'monthly') {
+      setCurrentSelection(null);
+    }
+  };
+
+  const handleNextCase = () => {
+    if (!selectedCaseForModal) return;
+    const currentIndex = monthsData.findIndex(m => m.id === selectedCaseForModal.id);
+    const nextIndex = (currentIndex + 1) % monthsData.length;
+    setSelectedCaseForModal(monthsData[nextIndex]);
+  };
+
+  const handlePrevCase = () => {
+    if (!selectedCaseForModal) return;
+    const currentIndex = monthsData.findIndex(m => m.id === selectedCaseForModal.id);
+    const prevIndex = (currentIndex - 1 + monthsData.length) % monthsData.length;
+    setSelectedCaseForModal(monthsData[prevIndex]);
+  };
+
   const handleDeleteData = async (id) => {
     // 1. Instantly remove from UI
     setMonthsData((prev) => prev.filter(m => m.id !== id));
@@ -105,14 +156,76 @@ function App() {
       <Sidebar 
         monthsData={monthsData} 
         currentSelection={currentSelection} 
-        onSelect={setCurrentSelection} 
+        onSelect={(data) => { setView('monthly'); setCurrentSelection(data); }} 
         onDelete={handleDeleteData}
+        currentView={view}
+        onNavigate={handleNavigate}
       />
-      <MainArea 
-        currentSelection={currentSelection} 
-        onAddData={handleAddData} 
-        onNewInput={() => setCurrentSelection(null)}
-      />
+      
+      <div className="main-content">
+        {view === 'monthly' ? (
+          <MainArea 
+            key={currentSelection?.id || 'new'}
+            currentSelection={currentSelection} 
+            onAddData={handleAddData} 
+            onUpdateData={handleUpdateData}
+            onNewInput={() => setCurrentSelection(null)}
+          />
+        ) : (
+          <div className="gallery-container">
+             <div className="gallery-header">
+                <h1 style={{ color: 'var(--primary)', fontWeight: 800 }}>Equity Curve Gallery</h1>
+                <p style={{ color: 'var(--text-light)' }}>Visual overview of all your trading months</p>
+             </div>
+             <div className="gallery-grid">
+                {monthsData.map(data => (
+                  <div key={data.id} className="gallery-card" onClick={() => setSelectedCaseForModal(data)}>
+                    <div className="gallery-card-chart">
+                      <MainArea key={data.id} currentSelection={data} isPreview={true} />
+                    </div>
+                    <div className="gallery-card-info">
+                      <h3>{data.month} {data.year}</h3>
+                      <span className={`r-badge ${data.data && data.data.length > 0 && data.data[data.data.length-1].cumulativeR >= 0 ? 'positive' : 'negative'}`}>
+                        {data.data && data.data.length > 0 ? (data.data[data.data.length-1].cumulativeR > 0 ? '+' : '') + data.data[data.data.length-1].cumulativeR : 0}R
+                      </span>
+                    </div>
+                  </div>
+                ))}
+             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Image Modal Lightbox */}
+      {selectedCaseForModal && (
+        <div className="modal-overlay" onClick={() => setSelectedCaseForModal(null)}>
+          <button 
+            className="modal-nav-btn prev" 
+            onClick={(e) => { e.stopPropagation(); handlePrevCase(); }}
+            title="Previous Curve"
+          >
+            <ChevronLeft size={32} />
+          </button>
+          
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedCaseForModal(null)}>&times;</button>
+            <div className="modal-header">
+              <h2>{selectedCaseForModal.month} {selectedCaseForModal.year} - Equity Curve</h2>
+            </div>
+            <div className="modal-body">
+              <MainArea currentSelection={selectedCaseForModal} isPreview={true} isExpanded={true} />
+            </div>
+          </div>
+
+          <button 
+            className="modal-nav-btn next" 
+            onClick={(e) => { e.stopPropagation(); handleNextCase(); }}
+            title="Next Curve"
+          >
+            <ChevronRight size={32} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

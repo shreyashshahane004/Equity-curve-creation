@@ -56,22 +56,21 @@ const CustomLabel = (props) => {
   );
 };
 
-const MainArea = ({ currentSelection, onAddData, onNewInput }) => {
-  const [pastedImage, setPastedImage] = useState(null);
+const MainArea = ({ currentSelection, onAddData, onUpdateData, onNewInput, isPreview = false, isExpanded = false }) => {
+  const [pastedImage, setPastedImage] = useState(currentSelection?.imageUrl || null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [extractedData, setExtractedData] = useState([]);
-  const [month, setMonth] = useState('January');
-  const [year, setYear] = useState('2026');
+  const [extractedData, setExtractedData] = useState(currentSelection?.data || []);
+  const [month, setMonth] = useState(currentSelection?.month || 'January');
+  const [year, setYear] = useState(currentSelection?.year || '2026');
   const [winLoss, setWinLoss] = useState('Win');
   const fileInputRef = useRef(null);
 
+  // Sync state when currentSelection changes (fixes persistence/loading bugs)
   useEffect(() => {
-    if (currentSelection) {
-      setExtractedData(currentSelection.data || []);
-      setPastedImage(currentSelection.imageUrl);
-      setMonth(currentSelection.month);
-      setYear(currentSelection.year);
-    }
+    setPastedImage(currentSelection?.imageUrl || null);
+    setExtractedData(currentSelection?.data || []);
+    setMonth(currentSelection?.month || 'January');
+    setYear(currentSelection?.year || '2026');
   }, [currentSelection]);
 
   const handlePaste = (e) => {
@@ -178,21 +177,53 @@ const MainArea = ({ currentSelection, onAddData, onNewInput }) => {
       return;
     }
     
-    onAddData({
-      month,
-      year,
-      imageUrl: pastedImage,
-      data: extractedData
-    });
+    if (currentSelection) {
+      onUpdateData(currentSelection.id, {
+        month,
+        year,
+        imageUrl: pastedImage,
+        data: extractedData
+      });
+      alert("Changes saved successfully!");
+    } else {
+      onAddData({
+        month,
+        year,
+        imageUrl: pastedImage,
+        data: extractedData
+      });
+    }
   };
 
-  const maxR = extractedData.length > 0 ? Math.max(...extractedData.map(d => d.cumulativeR)) : 0;
-  const minR = extractedData.length > 0 ? Math.min(...extractedData.map(d => d.cumulativeR)) : 0;
-  const endR = extractedData.length > 0 ? extractedData[extractedData.length - 1].cumulativeR : 0;
+  const handleSave = async () => {
+    if (onUpdateData && currentSelection) {
+      try {
+        const error = await onUpdateData(currentSelection.id, {
+          month,
+          year,
+          imageUrl: pastedImage,
+          data: extractedData
+        });
+        
+        if (error) {
+          alert("Error saving changes: " + error);
+        } else {
+          alert("Changes saved successfully!");
+        }
+      } catch (err) {
+        alert("Unexpected error: " + err.message);
+      }
+    }
+  };
+
+  const rValues = extractedData.map(d => typeof d.cumulativeR === 'number' ? d.cumulativeR : 0);
+  const maxR = rValues.length > 0 ? Math.max(...rValues) : 0;
+  const minR = rValues.length > 0 ? Math.min(...rValues) : 0;
+  const endR = rValues.length > 0 ? rValues[rValues.length - 1] : 0;
 
   return (
     <div className="main-area" onPaste={handlePaste} tabIndex={0} style={{ outline: 'none' }}>
-      {isProcessing && (
+      {isProcessing && !isPreview && (
         <div className="loading-overlay">
           <Loader2 size={48} className="spinner" />
           <h2>Extracting Trading Data...</h2>
@@ -210,76 +241,96 @@ const MainArea = ({ currentSelection, onAddData, onNewInput }) => {
         ) : (
           <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}>
             
-            {extractedData.length > 0 && (
-              <div className="chart-container">
-                <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', paddingRight: '10px' }}>
-                  <span style={{ fontSize: '18px', fontWeight: 800, color: '#6b7280' }}>EQUITY CURVE</span>
-                  <div style={{ display: 'flex', gap: '15px' }}>
-                    <div style={{ background: 'rgba(74, 144, 226, 0.1)', padding: '8px 16px', borderRadius: '12px', color: '#4a90e2', fontWeight: 800, fontSize: '15px' }}>
-                      High: {maxR > 0 ? '+' : ''}{maxR}R
+            {extractedData.length > 0 ? (
+              <>
+                {(!isPreview || isExpanded) && (
+                  <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', paddingRight: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '18px', fontWeight: 800, color: '#6b7280' }}>EQUITY CURVE</span>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary)' }}>{month} {year}</span>
                     </div>
-                    <div style={{ background: 'rgba(255, 107, 107, 0.1)', padding: '8px 16px', borderRadius: '12px', color: '#ff6b6b', fontWeight: 800, fontSize: '15px' }}>
-                      Low: {minR > 0 ? '+' : ''}{minR}R
-                    </div>
-                    <div style={{ background: endR >= 0 ? 'rgba(74, 144, 226, 0.1)' : 'rgba(255, 107, 107, 0.1)', padding: '8px 16px', borderRadius: '12px', color: endR >= 0 ? '#4a90e2' : '#ff6b6b', fontWeight: 800, fontSize: '15px' }}>
-                      End: {endR > 0 ? '+' : ''}{endR}R
+                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ background: 'rgba(74, 144, 226, 0.1)', padding: '6px 12px', borderRadius: '10px', color: '#4a90e2', fontWeight: 800, fontSize: '13px' }}>
+                          H: {maxR > 0 ? '+' : ''}{maxR}R
+                        </div>
+                        <div style={{ background: 'rgba(255, 107, 107, 0.1)', padding: '6px 12px', borderRadius: '10px', color: '#ff6b6b', fontWeight: 800, fontSize: '13px' }}>
+                          L: {minR > 0 ? '+' : ''}{minR}R
+                        </div>
+                        <div style={{ background: endR >= 0 ? 'rgba(74, 144, 226, 0.1)' : 'rgba(255, 107, 107, 0.1)', padding: '6px 12px', borderRadius: '10px', color: endR >= 0 ? '#4a90e2' : '#ff6b6b', fontWeight: 800, fontSize: '13px' }}>
+                          E: {endR > 0 ? '+' : ''}{endR}R
+                        </div>
+                      </div>
+                      
+                      {currentSelection && !isPreview && (
+                        <button 
+                          onClick={handleSave}
+                          style={{ background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '10px', padding: '8px 16px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 10px rgba(78, 205, 196, 0.3)' }}
+                        >
+                          Save Changes
+                        </button>
+                      )}
                     </div>
                   </div>
+                )}
+                <div className={`chart-container ${isPreview ? 'preview' : ''} ${isExpanded ? 'expanded' : ''}`}>
+
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={extractedData} margin={(isPreview && !isExpanded) ? { top: 10, right: 10, left: 10, bottom: 10 } : { top: 30, right: 40, left: 10, bottom: 40 }}>
+                      <defs>
+                        <linearGradient id="colorR" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#4a90e2" stopOpacity={(isPreview && !isExpanded) ? 0.6 : 0.4}/>
+                          <stop offset="95%" stopColor="#4a90e2" stopOpacity={0.05}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="id" axisLine={false} tickLine={false} tick={false} hide={isPreview && !isExpanded} />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={(isPreview && !isExpanded) ? false : { fill: '#9ca3af', fontSize: 12, fontWeight: 500 }} 
+                        tickMargin={10}
+                        hide={isPreview && !isExpanded}
+                      />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={(isPreview && !isExpanded) ? "#f3f4f6" : "#e5e7eb"} />
+                      {(!isPreview || isExpanded) && (
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                          itemStyle={{ color: '#4a90e2', fontWeight: 600 }}
+                        />
+                      )}
+                      <Area 
+                        type="monotone" 
+                        dataKey="cumulativeR" 
+                        stroke="#4a90e2" 
+                        strokeWidth={(isPreview && !isExpanded) ? 4 : 3} 
+                        fillOpacity={1} 
+                        fill="url(#colorR)"
+                        activeDot={(isPreview && !isExpanded) ? false : { r: 6, fill: '#4a90e2', stroke: 'white', strokeWidth: 2 }}
+                        dot={(isPreview && !isExpanded) ? false : { r: 3, fill: 'white', stroke: '#4a90e2', strokeWidth: 2 }}
+                        label={(isPreview && !isExpanded) ? null : <CustomLabel data={extractedData} />}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={extractedData} margin={{ top: 30, right: 40, left: 10, bottom: 40 }}>
-                    <defs>
-                      <linearGradient id="colorR" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4a90e2" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#4a90e2" stopOpacity={0.05}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="id" axisLine={false} tickLine={false} tick={false} />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#9ca3af', fontSize: 12, fontWeight: 500 }} 
-                      tickMargin={10}
-                    />
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                      itemStyle={{ color: '#4a90e2', fontWeight: 600 }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="cumulativeR" 
-                      stroke="#4a90e2" 
-                      strokeWidth={3} 
-                      fillOpacity={1} 
-                      fill="url(#colorR)"
-                      activeDot={{ r: 6, fill: '#4a90e2', stroke: 'white', strokeWidth: 2 }}
-                      dot={{ r: 3, fill: 'white', stroke: '#4a90e2', strokeWidth: 2 }}
-                      label={<CustomLabel data={extractedData} />}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-            
-            {extractedData.length > 0 && (
-              <div className="data-table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Detected Line</th>
-                      <th>R Value</th>
-                      <th>Cumulative R</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {extractedData.map((row) => (
-                      <tr key={row.id}>
-                        <td>{row.id}</td>
-                        <td>{row.originalText}</td>
-                        <td style={{ fontWeight: 'bold' }}>
-                          {!currentSelection ? (
+
+                {!isPreview && (
+                  <div className="data-table-container">
+                    <table className="data-table">
+
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Detected Line</th>
+                        <th>R Value</th>
+                        <th>Cumulative R</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {extractedData.map((row) => (
+                        <tr key={row.id}>
+                          <td>{row.id}</td>
+                          <td>{row.originalText}</td>
+                          <td style={{ fontWeight: 'bold' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                               <input 
                                 type="text" 
@@ -298,24 +349,31 @@ const MainArea = ({ currentSelection, onAddData, onNewInput }) => {
                               />
                               <span style={{ color: row.rValue >= 0 ? 'var(--secondary)' : 'var(--primary)' }}>R</span>
                             </div>
-                          ) : (
-                            <span style={{ color: row.rValue >= 0 ? 'var(--secondary)' : 'var(--primary)' }}>
-                              {row.rValue > 0 ? '+' : ''}{row.rValue}R
-                            </span>
-                          )}
-                        </td>
-                        <td>{row.cumulativeR}R</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </td>
+                          <td>{row.cumulativeR}R</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', marginTop: '100px' }}>
+                <BarChart2 size={48} style={{ color: '#e5e7eb', marginBottom: '15px' }} />
+                <h3 style={{ color: 'var(--text-light)' }}>No trades extracted yet</h3>
+                {pastedImage && !isProcessing && (
+                  <p style={{ color: '#9ca3af', marginTop: '10px' }}>
+                    {currentSelection ? "This saved entry contains no trade data." : "Click 'Make Chart' to extract trades from your pasted image."}
+                  </p>
+                )}
               </div>
             )}
           </div>
         )}
       </div>
 
-      {!currentSelection && (
+      {!isPreview && (
         <div className="bottom-bar">
           <input 
           type="file" 
@@ -398,7 +456,7 @@ const MainArea = ({ currentSelection, onAddData, onNewInput }) => {
             className="icon-btn" 
             style={{ backgroundColor: 'var(--secondary)', color: 'white' }}
             onClick={handleSend}
-            title="Send to Sidebar"
+            title={currentSelection ? "Update Entry" : "Send to Sidebar"}
           >
             <Send size={20} />
           </button>
