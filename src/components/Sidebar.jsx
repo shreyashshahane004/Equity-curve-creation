@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart2, LayoutGrid, Trash2 } from 'lucide-react';
+import { BarChart2, LayoutGrid, Trash2, CalendarDays, TrendingUp } from 'lucide-react';
 
 const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection, currentView }) => {
   return (
@@ -33,6 +33,20 @@ const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection,
         >
           <LayoutGrid size={20} />
           Images of Curves
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'calendar' ? 'active' : ''}`}
+          onClick={() => onNavigate('calendar')}
+        >
+          <CalendarDays size={20} />
+          Calendar View
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'analytics' ? 'active' : ''}`}
+          onClick={() => onNavigate('analytics')}
+        >
+          <TrendingUp size={20} />
+          Analytics
         </button>
       </div>
 

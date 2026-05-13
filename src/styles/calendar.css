@@ -1,0 +1,370 @@
+/* Month Selection Grid */
+.cal-select-container {
+  flex: 1;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 30px 40px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.cal-select-header h1 {
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+}
+
+.cal-month-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.cal-month-card {
+  background: var(--background);
+  border: 1px solid #f3f4f6;
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cal-month-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(78, 205, 196, 0.15);
+  border-color: var(--secondary);
+  background: white;
+}
+
+.cal-month-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+
+.cal-month-card-r {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.cal-month-card-r.win  { color: #4ECDC4; }
+.cal-month-card-r.loss { color: #FF6B6B; }
+
+.cal-month-card-trades {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+/* Back button */
+.cal-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--background);
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cal-back-btn:hover {
+  background: var(--secondary);
+  color: white;
+  border-color: var(--secondary);
+}
+
+/* Calendar View Styles */
+
+.cal-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 30px;
+  overflow-y: auto;
+  gap: 20px;
+}
+
+/* Header */
+.cal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cal-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  min-width: 180px;
+  text-align: center;
+}
+
+.cal-nav-btn {
+  background: var(--background);
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-dark);
+  transition: all 0.2s ease;
+}
+
+.cal-nav-btn:hover:not(:disabled) {
+  background: var(--secondary);
+  color: white;
+  border-color: var(--secondary);
+}
+
+.cal-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.82rem;
+  color: var(--text-light);
+  font-weight: 700;
+}
+
+/* Header right section (stats + legend) */
+.cal-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Stat pills */
+.cal-stat-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 12px;
+  min-width: 64px;
+}
+
+.cal-stat-pill.win {
+  background: rgba(78, 205, 196, 0.1);
+  border: 1px solid rgba(78, 205, 196, 0.25);
+}
+
+.cal-stat-pill.loss {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.25);
+}
+
+.cal-stat-pill.neutral {
+  background: rgba(100, 116, 139, 0.08);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.cal-stat-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cal-stat-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+
+.cal-stat-val.win  { color: #4ECDC4; }
+.cal-stat-val.loss { color: #FF6B6B; }
+
+.cal-legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.cal-legend-dot.win  { background: #4ECDC4; }
+.cal-legend-dot.loss { background: #FF6B6B; }
+
+/* Body layout */
+.cal-body {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.cal-grid-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Day column headers */
+.cal-day-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.cal-day-hdr {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #9ca3af;
+  padding: 6px 0;
+  letter-spacing: 0.05em;
+}
+
+/* Week row */
+.cal-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+/* Day cell */
+.cal-day-cell {
+  border-radius: 12px;
+  min-height: 80px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.cal-day-cell.empty {
+  background: #f9fafb;
+}
+
+.cal-day-cell.active {
+  background: #f9fafb;
+  border-color: #f3f4f6;
+}
+
+.cal-day-cell.active.win {
+  background: rgba(78, 205, 196, 0.06);
+  border-color: rgba(78, 205, 196, 0.2);
+}
+
+.cal-day-cell.active.loss {
+  background: rgba(255, 107, 107, 0.06);
+  border-color: rgba(255, 107, 107, 0.2);
+}
+
+.cal-day-num {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  align-self: flex-end;
+}
+
+.cal-r-val {
+  font-size: 1rem;
+  font-weight: 800;
+  align-self: flex-end;
+}
+
+.cal-r-val.win  { color: #4ECDC4; }
+.cal-r-val.loss { color: #FF6B6B; }
+
+.cal-trade-count {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+/* Weekly Net column */
+.cal-weekly-net {
+  width: 130px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cal-weekly-hdr {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.08em;
+  padding: 6px 0;
+  text-align: center;
+}
+
+.cal-week-net-card {
+  flex: 1;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px;
+  min-height: 80px;
+}
+
+.cal-week-net-card.win {
+  background: rgba(78, 205, 196, 0.08);
+  border: 1px solid rgba(78, 205, 196, 0.2);
+}
+
+.cal-week-net-card.loss {
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.cal-week-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+}
+
+.cal-week-net-val {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.cal-week-net-val.win  { color: #4ECDC4; }
+.cal-week-net-val.loss { color: #FF6B6B; }
+
+.cal-week-active {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  font-weight: 600;
+}

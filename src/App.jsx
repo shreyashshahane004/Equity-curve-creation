@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import MainArea from './components/MainArea';
+import CalendarView from './components/CalendarView';
+import AnalyticsView from './components/AnalyticsView';
 import { supabase } from './supabaseClient';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 function App() {
   const [monthsData, setMonthsData] = useState([]);
   const [currentSelection, setCurrentSelection] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [view, setView] = useState('monthly'); // 'monthly' or 'gallery'
+  const [view, setView] = useState('monthly'); // 'monthly', 'gallery', or 'calendar'
   const [selectedCaseForModal, setSelectedCaseForModal] = useState(null);
 
   // Fetch initial data from Supabase
@@ -108,9 +110,7 @@ function App() {
 
   const handleNavigate = (newView) => {
     setView(newView);
-    if (newView === 'monthly') {
-      setCurrentSelection(null);
-    }
+    if (newView === 'monthly') setCurrentSelection(null);
   };
 
   const handleNextCase = () => {
@@ -163,7 +163,7 @@ function App() {
       />
       
       <div className="main-content">
-        {view === 'monthly' ? (
+        {view === 'monthly' && (
           <MainArea 
             key={currentSelection?.id || 'new'}
             currentSelection={currentSelection} 
@@ -171,7 +171,9 @@ function App() {
             onUpdateData={handleUpdateData}
             onNewInput={() => setCurrentSelection(null)}
           />
-        ) : (
+        )}
+
+        {view === 'gallery' && (
           <div className="gallery-container">
              <div className="gallery-header">
                 <h1 style={{ color: 'var(--primary)', fontWeight: 800 }}>Equity Curve Gallery</h1>
@@ -193,6 +195,14 @@ function App() {
                 ))}
              </div>
           </div>
+        )}
+
+        {view === 'calendar' && (
+          <CalendarView monthsData={monthsData} />
+        )}
+
+        {view === 'analytics' && (
+          <AnalyticsView monthsData={monthsData} />
         )}
       </div>
 

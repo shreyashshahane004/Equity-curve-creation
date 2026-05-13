@@ -1,0 +1,166 @@
+/* Analytics View Styles */
+.anl-wrapper {
+  flex: 1;
+  background: var(--background);
+  border-radius: var(--border-radius);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 30px 36px;
+}
+
+.anl-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* Stat boxes row */
+.anl-stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.anl-stat-box {
+  background: white;
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.anl-stat-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.anl-stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  line-height: 1.1;
+}
+
+.anl-stat-sub {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+/* Chart card */
+.anl-chart-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px 28px 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.anl-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.anl-chart-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.anl-best-day {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-light);
+}
+
+/* Net R labels row under chart */
+.anl-net-labels {
+  display: flex;
+  justify-content: space-around;
+  padding: 0 10px;
+  margin-top: 4px;
+}
+
+.anl-net-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.anl-net-label .win  { color: #4ECDC4; }
+.anl-net-label .loss { color: #FF6B6B; }
+
+.anl-net-day {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+/* FOMC section */
+.anl-fomc-row {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+}
+
+.anl-fomc-divider {
+  width: 1px;
+  background: #f3f4f6;
+  margin: 0 24px;
+  flex-shrink: 0;
+}
+
+.anl-fomc-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.anl-fomc-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  border-left: 3px solid;
+  padding-left: 10px;
+}
+
+.anl-fomc-trades-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.anl-fomc-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.anl-fomc-stat {
+  background: var(--background);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
