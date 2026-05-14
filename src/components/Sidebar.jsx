@@ -1,7 +1,8 @@
-import React from 'react';
-import { BarChart2, LayoutGrid, Trash2, CalendarDays, TrendingUp, Activity, PieChart, LineChart, SplitSquareHorizontal, Target } from 'lucide-react';
+import React, { useState } from 'react';
+import { BarChart2, LayoutGrid, Trash2, CalendarDays, TrendingUp, Activity, PieChart, LineChart, SplitSquareHorizontal, Target, Folder, ChevronDown } from 'lucide-react';
 
 const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection, currentView }) => {
+  const [isSavedMonthsOpen, setIsSavedMonthsOpen] = useState(false);
   return (
     <div className="sidebar">
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
@@ -83,12 +84,31 @@ const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection,
           <Target size={20} />
           Target Probabilities
         </button>
+
+        <button 
+          className="menu-item"
+          onClick={() => setIsSavedMonthsOpen(!isSavedMonthsOpen)}
+          style={{ justifyContent: 'space-between', paddingRight: '12px' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Folder size={20} />
+            Saved Months
+          </div>
+          <ChevronDown 
+            size={16} 
+            style={{ 
+              transform: isSavedMonthsOpen ? 'rotate(180deg)' : 'none',
+              transition: 'transform 0.2s ease'
+            }} 
+          />
+        </button>
       </div>
 
-      <div className="sidebar-list">
-        {monthsData.length === 0 ? (
-          <p style={{ color: 'var(--text-light)', textAlign: 'center', marginTop: '20px', fontSize: '0.9rem' }}>No months recorded yet.</p>
-        ) : (
+      {isSavedMonthsOpen && (
+        <div className="sidebar-list">
+          {monthsData.length === 0 ? (
+            <p style={{ color: 'var(--text-light)', textAlign: 'center', marginTop: '20px', fontSize: '0.9rem' }}>No months recorded yet.</p>
+          ) : (
           [...monthsData].sort((a, b) => {
             const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
             const yearDiff = Number(a.year) - Number(b.year);
@@ -137,7 +157,8 @@ const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection,
             );
           })
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
