@@ -61,8 +61,38 @@ const MainArea = ({ currentSelection, onAddData, onUpdateData, onNewInput, isPre
       let cumulativeR = 0;
 
       lines.forEach((line) => {
-        let trimmed = line.trim().replace(/(?:El|E1|el|-l|-I|-i|E l)$/i, '-1');
-        if (!trimmed || !trimmed.match(/\d{1,2}[-/\s][A-Za-z]{3}/)) return;
+        let trimmed = line.trim();
+
+        // 1. Date fixes (O/0, l/1 confusions)
+        trimmed = trimmed.replace(/^([Oo])(\d[-/\s])/i, '0$2');
+        trimmed = trimmed.replace(/^([lI])(\d[-/\s])/i, '1$2');
+        trimmed = trimmed.replace(/^(\d)([Oo])([-/\s])/i, '$10$3');
+        trimmed = trimmed.replace(/^(\d)([lI])([-/\s])/i, '$11$3');
+        
+        // Month typo fixes
+        trimmed = trimmed.replace(/([-/\s])Ju1/i, '$1Jul');
+        trimmed = trimmed.replace(/([-/\s])(Au9|Auq)/i, '$1Aug');
+        trimmed = trimmed.replace(/([-/\s])0ct/i, '$1Oct');
+        trimmed = trimmed.replace(/([-/\s])N0v/i, '$1Nov');
+
+        // Ensure space between date and number if missing (e.g. "03-Jul-1" -> "03-Jul -1")
+        trimmed = trimmed.replace(/([A-Za-z])(-?\d+(?:\.\d+)?)$/, '$1 $2');
+
+        // 2. R-value fixes
+        // Fix -1 specific common mistakes
+        trimmed = trimmed.replace(/(?:El|E1|el|-l|-I|-i|E\s*l)$/i, '-1');
+        
+        // Close gap in minus signs: "- 1" -> "-1", "~ 1" -> "-1"
+        trimmed = trimmed.replace(/([-—−~_])\s+(\d+(?:\.\d+)?)$/, '-$2');
+        // Convert alternate dash characters to minus: "~1" -> "-1"
+        trimmed = trimmed.replace(/[—−~_](\d+(?:\.\d+)?)$/, '-$1');
+
+        // HEURISTIC: Tesseract often completely drops the minus sign when it's small and separated by space.
+        // If a line ends with exactly " 1", we safely assume it's "-1" (losses). 
+        // If the user actually had a +1R win, they can manually edit it back to 1 in the table.
+        trimmed = trimmed.replace(/\s+1$/, ' -1');
+
+        if (!trimmed || !trimmed.match(/\d{1,2}[-/\s][A-Za-z0-9]{3}/)) return;
         
         const match = trimmed.match(/(?:^|\s+)((-?\d+(?:\.\d+)?)|(no\s*trade))$/i);
         if (match) {
@@ -84,6 +114,46 @@ const MainArea = ({ currentSelection, onAddData, onUpdateData, onNewInput, isPre
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleAddRow = () => {
+    setExtractedData(prevData => {
+      const newId = prevData.length > 0 ? Math.max(...prevData.map(r => r.id)) + 1 : 1;
+      const lastCumulative = prevData.length > 0 ? prevData[prevData.length - 1].cumulativeR : 0;
+      return [...prevData, {
+        id: newId,
+        originalText: 'New Date',
+        rValueStr: '0',
+        rValue: 0,
+        cumulativeR: lastCumulative
+      }];
+    });
+  };
+
+  const handleEditOriginalText = (id, newText) => {
+    setExtractedData(prevData => prevData.map(r => r.id === id ? { ...r, originalText: newText } : r));
+  };
+
+  const handleMoveRow = (index, direction) => {
+    setExtractedData(prevData => {
+      if (direction === 'up' && index === 0) return prevData;
+      if (direction === 'down' && index === prevData.length - 1) return prevData;
+
+      const newData = [...prevData];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      
+      const temp = newData[index];
+      newData[index] = newData[targetIndex];
+      newData[targetIndex] = temp;
+
+      const startIdx = Math.min(index, targetIndex);
+      let cumulative = startIdx > 0 ? newData[startIdx - 1].cumulativeR : 0;
+      for (let i = startIdx; i < newData.length; i++) {
+        cumulative += newData[i].rValue;
+        newData[i] = { ...newData[i], cumulativeR: parseFloat(cumulative.toFixed(2)) };
+      }
+      return newData;
+    });
   };
 
   const handleEditRValue = (id, newValueStr) => {
@@ -168,7 +238,7 @@ const MainArea = ({ currentSelection, onAddData, onUpdateData, onNewInput, isPre
                 <div className={`chart-container ${isPreview ? 'preview' : ''} ${isExpanded ? 'expanded' : ''}`}>
                   <EquityChart extractedData={extractedData} isPreview={isPreview} isExpanded={isExpanded} />
                 </div>
-                {!isPreview && <DataTable extractedData={extractedData} handleEditRValue={handleEditRValue} />}
+                {!isPreview && <DataTable extractedData={extractedData} handleEditRValue={handleEditRValue} handleEditOriginalText={handleEditOriginalText} handleAddRow={handleAddRow} handleMoveRow={handleMoveRow} />}
               </>
             ) : (
               <div style={{ textAlign: 'center', marginTop: '100px' }}>

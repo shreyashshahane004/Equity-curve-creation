@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart2, LayoutGrid, Trash2, CalendarDays, TrendingUp } from 'lucide-react';
+import { BarChart2, LayoutGrid, Trash2, CalendarDays, TrendingUp, Activity, PieChart, LineChart, SplitSquareHorizontal, Target } from 'lucide-react';
 
 const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection, currentView }) => {
   return (
@@ -47,6 +47,41 @@ const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection,
         >
           <TrendingUp size={20} />
           Analytics
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'months-performance' ? 'active' : ''}`}
+          onClick={() => onNavigate('months-performance')}
+        >
+          <Activity size={20} />
+          Months Performance
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'seasonal-tendency' ? 'active' : ''}`}
+          onClick={() => onNavigate('seasonal-tendency')}
+        >
+          <PieChart size={20} />
+          Seasonal Tendency
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'all-time-curve' ? 'active' : ''}`}
+          onClick={() => onNavigate('all-time-curve')}
+        >
+          <LineChart size={20} />
+          All-Time Curve
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'half-month-edge' ? 'active' : ''}`}
+          onClick={() => onNavigate('half-month-edge')}
+        >
+          <SplitSquareHorizontal size={20} />
+          Half-Month Edge
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'profit-target' ? 'active' : ''}`}
+          onClick={() => onNavigate('profit-target')}
+        >
+          <Target size={20} />
+          Target Probabilities
         </button>
       </div>
 

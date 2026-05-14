@@ -3,6 +3,11 @@ import Sidebar from './components/Sidebar';
 import MainArea from './components/MainArea';
 import CalendarView from './components/CalendarView';
 import AnalyticsView from './components/AnalyticsView';
+import MonthsPerformanceView from './components/MonthsPerformanceView';
+import SeasonalTendencyView from './components/SeasonalTendencyView';
+import AllTimeCurveView from './components/AllTimeCurveView';
+import HalfMonthEdgeView from './components/HalfMonthEdgeView';
+import ProfitTargetView from './components/ProfitTargetView';
 import { supabase } from './supabaseClient';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -203,6 +208,26 @@ function App() {
 
         {view === 'analytics' && (
           <AnalyticsView monthsData={monthsData} />
+        )}
+
+        {view === 'months-performance' && (
+          <MonthsPerformanceView monthsData={monthsData} />
+        )}
+
+        {view === 'seasonal-tendency' && (
+          <SeasonalTendencyView monthsData={monthsData} />
+        )}
+
+        {view === 'all-time-curve' && (
+          <AllTimeCurveView monthsData={monthsData} />
+        )}
+
+        {view === 'half-month-edge' && (
+          <HalfMonthEdgeView monthsData={monthsData} />
+        )}
+
+        {view === 'profit-target' && (
+          <ProfitTargetView monthsData={monthsData} />
         )}
       </div>
 

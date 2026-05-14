@@ -6,6 +6,11 @@
 @import './styles/utilities.css';
 @import './styles/calendar.css';
 @import './styles/analytics.css';
+@import './styles/months-performance.css';
+@import './styles/seasonal-tendency.css';
+@import './styles/all-time-curve.css';
+@import './styles/half-month-edge.css';
+@import './styles/profit-target.css';
 
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 

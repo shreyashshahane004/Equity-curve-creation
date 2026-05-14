@@ -1,0 +1,148 @@
+/* All-Time Curve View Styles */
+
+.atc-wrapper {
+  flex: 1;
+  background: var(--background);
+  border-radius: var(--border-radius);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 30px 36px;
+}
+
+.atc-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.atc-page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.atc-page-sub {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+/* Stats Grid */
+.atc-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.atc-stat-box {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.atc-stat-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+.atc-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.atc-stat-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.atc-stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-top: 4px;
+}
+
+.atc-stat-sub {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #b0b7c3;
+}
+
+/* Chart Card */
+.atc-chart-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px 28px 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 550px;
+}
+
+.atc-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.atc-chart-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.atc-dd-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #FF6B6B;
+  background: rgba(255, 107, 107, 0.08);
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.atc-dd-box {
+  width: 12px;
+  height: 12px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 107, 107, 0.4),
+    rgba(255, 107, 107, 0.4) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  border-radius: 2px;
+}
+
+.atc-empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  gap: 16px;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  color: var(--text-light);
+  font-weight: 700;
+  font-size: 1rem;
+}

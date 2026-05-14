@@ -1,0 +1,137 @@
+.ptv-wrapper {
+  flex: 1;
+  background: var(--background);
+  border-radius: var(--border-radius);
+  overflow-y: auto;
+  padding: 30px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.ptv-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ptv-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.ptv-sub {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.ptv-chart-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid #f3f4f6;
+}
+
+.ptv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.ptv-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid #f3f4f6;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ptv-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+.ptv-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ptv-target-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ptv-rate {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.ptv-ratio {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.ptv-ratio strong {
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.ptv-avg-trades {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.ptv-avg-trades strong {
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.ptv-months-list {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 16px;
+}
+
+.ptv-month-pill {
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ptv-month-pill.failed {
+  background: #f3f4f6;
+  color: #9ca3af;
+}

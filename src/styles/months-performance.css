@@ -1,0 +1,296 @@
+/* ═══════════════════════════════════════════════
+   Months Performance View
+   ═══════════════════════════════════════════════ */
+
+.mp-wrapper {
+  flex: 1;
+  background: var(--background);
+  border-radius: var(--border-radius);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 30px 36px;
+}
+
+/* ── Page header ──────────────────────────────── */
+.mp-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mp-page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.mp-page-sub {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.mp-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-light);
+  background: white;
+  border-radius: 30px;
+  padding: 8px 16px;
+  box-shadow: var(--shadow);
+}
+
+.mp-legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mp-legend-combined {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ── Column headers ───────────────────────────── */
+.mp-col-headers {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.mp-col-header-month {
+  width: 88px;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.mp-col-header-blocks {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+}
+
+.mp-col-header-blocks span {
+  flex: 1;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.mp-col-combined {
+  color: #764ba2 !important;
+}
+
+/* ── Month rows container ─────────────────────── */
+.mp-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Single month row ─────────────────────────── */
+.mp-month-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  background: white;
+  border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.mp-month-row:hover {
+  box-shadow: 0 12px 32px rgba(0,0,0,0.09);
+  transform: translateY(-1px);
+}
+
+.mp-month-row--empty {
+  opacity: 0.55;
+}
+
+/* ── Month badge column ───────────────────────── */
+.mp-month-label-col {
+  width: 76px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mp-month-badge {
+  background: linear-gradient(135deg, var(--primary) 0%, #ff8e8e 100%);
+  border-radius: 12px;
+  padding: 10px 6px;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mp-month-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: white;
+  display: block;
+  line-height: 1;
+}
+
+.mp-month-full {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: block;
+}
+
+/* ── Blocks row ───────────────────────────────── */
+.mp-blocks-row {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  align-items: stretch;
+}
+
+/* ── Individual year block ────────────────────── */
+.mp-year-block {
+  flex: 1;
+  border-radius: 14px;
+  background: var(--background);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1.5px solid transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  min-width: 0;
+}
+
+.mp-year-block:hover {
+  border-color: rgba(78, 205, 196, 0.35);
+  background: #f0fffe;
+}
+
+/* Combined block accent */
+.mp-combined {
+  background: linear-gradient(135deg, rgba(102,126,234,0.07) 0%, rgba(118,75,162,0.07) 100%);
+  border: 1.5px solid rgba(118,75,162,0.18);
+}
+
+.mp-combined:hover {
+  border-color: rgba(118,75,162,0.4);
+  background: linear-gradient(135deg, rgba(102,126,234,0.12) 0%, rgba(118,75,162,0.12) 100%);
+}
+
+.mp-no-data {
+  opacity: 0.45;
+}
+
+/* ── Year block internals ─────────────────────── */
+.mp-year-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mp-year-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.mp-combined-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #764ba2;
+  background: rgba(118,75,162,0.12);
+  border-radius: 20px;
+  padding: 2px 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mp-net-r {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mp-empty-msg {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #c4c4c4;
+  padding: 12px 0;
+  text-align: center;
+}
+
+/* ── Pills grid ───────────────────────────────── */
+.mp-pills-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.mp-pill {
+  background: white;
+  border-radius: 8px;
+  padding: 5px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.mp-pill-label {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #b0b7c3;
+  line-height: 1;
+}
+
+.mp-pill-value {
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* ── Empty state ──────────────────────────────── */
+.mp-empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  gap: 16px;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  color: var(--text-light);
+  font-weight: 700;
+  font-size: 1rem;
+}
