@@ -91,6 +91,13 @@ const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection,
           <Target size={20} />
           Payout Simulator
         </button>
+        <button 
+          className={`menu-item ${currentView === 'real-payout-simulation' ? 'active' : ''}`}
+          onClick={() => onNavigate('real-payout-simulation')}
+        >
+          <Target size={20} />
+          Real Payout Prob
+        </button>
 
         <button 
           className="menu-item"
