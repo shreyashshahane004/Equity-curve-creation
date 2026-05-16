@@ -18,7 +18,10 @@ const buildDayMap = (data, month) => {
   const map = {};
   (data || []).forEach(trade => {
     const day = parseDayFromText(trade.originalText || '', month);
-    if (day) map[day] = (map[day] || 0) + (trade.rValue || 0);
+    if (day) {
+      map[day] = (map[day] || 0) + (trade.rValue || 0);
+      map[day] = Math.round(map[day] * 100) / 100;
+    }
   });
   return map;
 };
@@ -66,15 +69,16 @@ const CalendarDetail = ({ sorted, index, onBack, onPrev, onNext }) => {
   const year = parseInt(current.year);
   const dayMap = buildDayMap(current.data, current.month);
   const weeks = buildCalendarWeeks(monthIndex, year);
-  const weeklyNets = weeks.map(wk =>
-    wk.reduce((sum, day) => (day && dayMap[day] !== undefined ? sum + dayMap[day] : sum), 0)
-  );
+  const weeklyNets = weeks.map(wk => {
+    let sum = wk.reduce((s, day) => (day && dayMap[day] !== undefined ? s + dayMap[day] : s), 0);
+    return Math.round(sum * 100) / 100;
+  });
 
   // Compute stats from day map
   const tradedDays = Object.values(dayMap);
   const wins = tradedDays.filter(r => r > 0).length;
   const losses = tradedDays.filter(r => r < 0).length;
-  const totalR = tradedDays.reduce((sum, r) => sum + r, 0);
+  const totalR = Math.round(tradedDays.reduce((sum, r) => sum + r, 0) * 100) / 100;
 
   return (
     <div className="cal-wrapper">

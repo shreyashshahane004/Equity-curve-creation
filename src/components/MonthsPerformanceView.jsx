@@ -33,8 +33,10 @@ const parseDateStr = (originalText, month, year) => {
 const emptyStats = () => ({ trades: 0, wins: 0, losses: 0, totalR: 0 });
 
 const addTrade = (stats, r) => {
+  if (r === 0) return; // Ignore "no trade" days
   stats.trades++;
   stats.totalR += r;
+  stats.totalR = Math.round(stats.totalR * 100) / 100;
   if (r > 0) stats.wins++;
   else if (r < 0) stats.losses++;
 };

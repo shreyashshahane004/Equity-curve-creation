@@ -31,8 +31,9 @@ const ProfitTargetView = ({ monthsData }) => {
         const monthLabel = `${entry.month.substring(0,3)} '${entry.year.toString().slice(-2)}`;
         
         for (let trade of (entry.data || [])) {
-          tradesCount++;
+          if (trade.rValue !== 0) tradesCount++;
           cumulative += trade.rValue;
+          cumulative = Math.round(cumulative * 100) / 100;
           if (cumulative >= t) {
             hit = true;
             break;

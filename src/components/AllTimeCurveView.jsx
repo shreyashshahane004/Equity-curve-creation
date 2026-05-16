@@ -112,7 +112,7 @@ const AllTimeCurveView = ({ monthsData }) => {
         currentPeakIndex = idx;
       }
       
-      const dd = point.cumulativeR - currentPeakR;
+      const dd = Math.round((point.cumulativeR - currentPeakR) * 100) / 100;
       point.drawdown = dd;
       
       if (dd < maxDrawdown) {
@@ -129,8 +129,8 @@ const AllTimeCurveView = ({ monthsData }) => {
     return {
       chartData: data,
       stats: {
-        totalTrades: data.length - 1,
-        netR: allTimeR,
+        totalTrades: data.filter(d => d.rValue !== 0 && d.index !== 0).length,
+        netR: Math.round(allTimeR * 100) / 100,
         maxDrawdown,
         maxR,
         troughPeakIndex,

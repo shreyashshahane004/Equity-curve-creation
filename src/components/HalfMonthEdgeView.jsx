@@ -20,19 +20,23 @@ const processGroup = (trades) => {
     if (!day) return; 
     
     if (day <= 15) {
-      h1Trades++;
-      h1Net += t.rValue;
-      if (t.rValue > 0) h1Wins++;
+      if (t.rValue !== 0) {
+        h1Trades++;
+        h1Net += t.rValue;
+        if (t.rValue > 0) h1Wins++;
+      }
     } else {
-      h2Trades++;
-      h2Net += t.rValue;
-      if (t.rValue > 0) h2Wins++;
+      if (t.rValue !== 0) {
+        h2Trades++;
+        h2Net += t.rValue;
+        if (t.rValue > 0) h2Wins++;
+      }
     }
   });
 
   return {
-    h1: { trades: h1Trades, net: h1Net, wr: h1Trades > 0 ? (h1Wins/h1Trades)*100 : 0 },
-    h2: { trades: h2Trades, net: h2Net, wr: h2Trades > 0 ? (h2Wins/h2Trades)*100 : 0 },
+    h1: { trades: h1Trades, net: Math.round(h1Net * 100) / 100, wr: h1Trades > 0 ? (h1Wins/h1Trades)*100 : 0 },
+    h2: { trades: h2Trades, net: Math.round(h2Net * 100) / 100, wr: h2Trades > 0 ? (h2Wins/h2Trades)*100 : 0 },
     valid: h1Trades > 0 || h2Trades > 0
   };
 };

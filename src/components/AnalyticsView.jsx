@@ -66,8 +66,10 @@ const parseTradeDateStr = (originalText, month, year) => {
 const emptyStats = () => ({ trades: 0, wins: 0, losses: 0, totalR: 0 });
 
 const addTrade = (stats, r) => {
+  if (r === 0) return; // Ignore "no trade" days
   stats.trades++;
   stats.totalR += r;
+  stats.totalR = Math.round(stats.totalR * 100) / 100;
   if (r > 0) stats.wins++;
   else if (r < 0) stats.losses++;
 };
@@ -102,8 +104,13 @@ const aggregateData = (monthsData) => {
         else addTrade(nonNfp, r);
         const ds = dayStats[dayOfWeek];
         ds.count++;
-        if (r > 0) ds.winR += r;
-        else ds.lossR += Math.abs(r);
+        if (r > 0) ds.winR = Math.round((ds.winR + r) * 100) / 100;
+        else ds.lossR = Math.round((ds.lossR + Math.abs(r)) * 100) / 100;
+      } else {
+        // If date is unparseable, it goes into the non-event buckets to keep totals mathematically sound
+        addTrade(nonFomc, r);
+        addTrade(nonCpi, r);
+        addTrade(nonNfp, r);
       }
     });
   });

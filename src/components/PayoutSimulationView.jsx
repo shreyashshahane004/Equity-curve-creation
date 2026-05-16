@@ -67,7 +67,9 @@ const PayoutSimulationView = ({ monthsData }) => {
     }
     if (excludeFridays) {
       tradesToUse = tradesToUse.filter(t => {
-        const dateObj = new Date(t.dateStr);
+        if (!t.dateStr || t.dateStr.includes('unknown')) return true;
+        const [y, m, d] = t.dateStr.split('-');
+        const dateObj = new Date(y, m - 1, d, 12, 0, 0);
         return dateObj.getDay() !== 5; // 5 is Friday
       });
     }
@@ -101,8 +103,9 @@ const PayoutSimulationView = ({ monthsData }) => {
       const startDateStr = tradesToUse[startIndex].dateStr;
 
       for (let j = startIndex; j < tradesToUse.length; j++) {
-        tradesTaken++;
+        if (tradesToUse[j].rValue !== 0) tradesTaken++;
         cumulative += (tradesToUse[j].rValue || 0);
+        cumulative = Math.round(cumulative * 100) / 100; // Fix floating point errors
         path.push({
           tradeNo: tradesTaken,
           dateStr: tradesToUse[j].dateStr,
