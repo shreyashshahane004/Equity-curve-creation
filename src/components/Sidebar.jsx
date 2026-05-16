@@ -84,6 +84,13 @@ const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection,
           <Target size={20} />
           Target Probabilities
         </button>
+        <button 
+          className={`menu-item ${currentView === 'payout-simulation' ? 'active' : ''}`}
+          onClick={() => onNavigate('payout-simulation')}
+        >
+          <Target size={20} />
+          Payout Simulator
+        </button>
 
         <button 
           className="menu-item"

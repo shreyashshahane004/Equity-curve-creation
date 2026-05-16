@@ -8,6 +8,7 @@ import SeasonalTendencyView from './components/SeasonalTendencyView';
 import AllTimeCurveView from './components/AllTimeCurveView';
 import HalfMonthEdgeView from './components/HalfMonthEdgeView';
 import ProfitTargetView from './components/ProfitTargetView';
+import PayoutSimulationView from './components/PayoutSimulationView';
 import { supabase } from './supabaseClient';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -228,6 +229,10 @@ function App() {
 
         {view === 'profit-target' && (
           <ProfitTargetView monthsData={monthsData} />
+        )}
+
+        {view === 'payout-simulation' && (
+          <PayoutSimulationView monthsData={monthsData} />
         )}
       </div>
 
