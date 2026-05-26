@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart2, LayoutGrid, Trash2, CalendarDays, TrendingUp, Activity, PieChart, LineChart, SplitSquareHorizontal, Target, Folder, ChevronDown } from 'lucide-react';
+import { BarChart2, LayoutGrid, Trash2, CalendarDays, TrendingUp, Activity, PieChart, LineChart, SplitSquareHorizontal, Target, Folder, ChevronDown, CalendarCheck, PenTool, Newspaper } from 'lucide-react';
 
 const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection, currentView }) => {
   const [isSavedMonthsOpen, setIsSavedMonthsOpen] = useState(false);
@@ -97,6 +97,27 @@ const Sidebar = ({ monthsData, onSelect, onDelete, onNavigate, currentSelection,
         >
           <Target size={20} />
           Real Payout Prob
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'monthly-payout-plan' ? 'active' : ''}`}
+          onClick={() => onNavigate('monthly-payout-plan')}
+        >
+          <CalendarCheck size={20} />
+          Monthly Payout Plan
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'whiteboard' ? 'active' : ''}`}
+          onClick={() => onNavigate('whiteboard')}
+        >
+          <PenTool size={20} />
+          Whiteboard
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'news-events' ? 'active' : ''}`}
+          onClick={() => onNavigate('news-events')}
+        >
+          <Newspaper size={20} />
+          News Events
         </button>
 
         <button 

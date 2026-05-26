@@ -2,66 +2,7 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, AlertTriangle } from 'lucide-react';
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-// All FOMC dates as YYYY-MM-DD strings
-const FOMC_DATES = new Set([
-  // 2023
-  '2023-02-01','2023-03-22','2023-05-03','2023-06-14',
-  '2023-07-26','2023-09-20','2023-11-01','2023-12-13',
-  // 2024
-  '2024-01-31','2024-03-20','2024-05-01','2024-06-12',
-  '2024-07-31','2024-09-18','2024-11-07','2024-12-18',
-  // 2025
-  '2025-01-29','2025-03-19','2025-05-07','2025-06-18',
-  '2025-07-30','2025-09-17','2025-10-29','2025-12-10',
-]);
-
-// All CPI dates as YYYY-MM-DD strings
-const CPI_DATES = new Set([
-  // 2023
-  '2023-01-12','2023-02-14','2023-03-14','2023-04-12',
-  '2023-05-10','2023-06-13','2023-07-12','2023-08-10',
-  '2023-09-13','2023-10-12','2023-11-14','2023-12-12',
-  // 2024
-  '2024-01-11','2024-02-13','2024-03-12','2024-04-10',
-  '2024-05-15','2024-06-12','2024-07-11','2024-08-14',
-  '2024-09-11','2024-10-10','2024-11-13','2024-12-11',
-  // 2025
-  '2025-01-15','2025-02-12','2025-03-12','2025-04-10',
-  '2025-05-13','2025-06-11','2025-07-15','2025-08-12',
-  '2025-09-11','2025-10-24','2025-12-18',
-]);
-
-// All NFP dates as YYYY-MM-DD strings
-const NFP_DATES = new Set([
-  // 2023
-  '2023-01-06','2023-02-03','2023-03-10','2023-04-07',
-  '2023-05-05','2023-06-02','2023-07-07','2023-08-04',
-  '2023-09-01','2023-10-06','2023-11-03','2023-12-08',
-  // 2024
-  '2024-01-05','2024-02-02','2024-03-08','2024-04-05',
-  '2024-05-03','2024-06-07','2024-07-05','2024-08-02',
-  '2024-09-06','2024-10-04','2024-11-01','2024-12-06',
-  // 2025
-  '2025-01-10','2025-02-07','2025-03-07','2025-04-04',
-  '2025-05-02','2025-06-06','2025-07-03','2025-08-01',
-  '2025-09-05',
-]);
-
-const parseTradeDateStr = (originalText, month, year) => {
-  const monthIndex = MONTHS.indexOf(month);
-  if (monthIndex === -1) return null;
-  const match = (originalText || '').match(/(\d{1,2})[-/\s]([A-Za-z]{3})/);
-  if (!match) return null;
-  if (match[2].toLowerCase() !== SHORT_MONTHS[monthIndex].toLowerCase()) return null;
-  const day = parseInt(match[1]);
-  const mm = String(monthIndex + 1).padStart(2, '0');
-  const dd = String(day).padStart(2, '0');
-  return { dateStr: `${year}-${mm}-${dd}`, dayOfWeek: new Date(parseInt(year), monthIndex, day).getDay() };
-};
 
 const emptyStats = () => ({ trades: 0, wins: 0, losses: 0, totalR: 0 });
 
@@ -77,7 +18,7 @@ const addTrade = (stats, r) => {
 const winRate = (s) => s.trades > 0 ? ((s.wins / s.trades) * 100).toFixed(1) : '0.0';
 const fmtR = (r) => `${r > 0 ? '+' : ''}${parseFloat(r.toFixed(2))}R`;
 
-const aggregateData = (monthsData) => {
+const aggregateData = (tradesData) => {
   const overall = emptyStats();
   const fomc = emptyStats();
   const nonFomc = emptyStats();
@@ -87,32 +28,34 @@ const aggregateData = (monthsData) => {
   const nonNfp = emptyStats();
   const dayStats = Array(7).fill(null).map(() => ({ winR: 0, lossR: 0, count: 0 }));
 
-  monthsData.forEach(entry => {
-    (entry.data || []).forEach(trade => {
-      const parsed = parseTradeDateStr(trade.originalText, entry.month, entry.year);
-      const r = trade.rValue || 0;
+  (tradesData || []).forEach(trade => {
+    const r = trade.r_value || 0;
 
-      addTrade(overall, r);
+    addTrade(overall, r);
 
-      if (parsed) {
-        const { dateStr, dayOfWeek } = parsed;
-        if (FOMC_DATES.has(dateStr)) addTrade(fomc, r);
-        else addTrade(nonFomc, r);
-        if (CPI_DATES.has(dateStr)) addTrade(cpi, r);
-        else addTrade(nonCpi, r);
-        if (NFP_DATES.has(dateStr)) addTrade(nfp, r);
-        else addTrade(nonNfp, r);
+    if (trade.trade_date) {
+      if (trade.is_fomc) addTrade(fomc, r);
+      else addTrade(nonFomc, r);
+      
+      if (trade.is_cpi) addTrade(cpi, r);
+      else addTrade(nonCpi, r);
+      
+      if (trade.is_nfp) addTrade(nfp, r);
+      else addTrade(nonNfp, r);
+      
+      const dayOfWeek = trade.day_of_week;
+      if (dayOfWeek >= 0 && dayOfWeek <= 6) {
         const ds = dayStats[dayOfWeek];
         ds.count++;
         if (r > 0) ds.winR = Math.round((ds.winR + r) * 100) / 100;
         else ds.lossR = Math.round((ds.lossR + Math.abs(r)) * 100) / 100;
-      } else {
-        // If date is unparseable, it goes into the non-event buckets to keep totals mathematically sound
-        addTrade(nonFomc, r);
-        addTrade(nonCpi, r);
-        addTrade(nonNfp, r);
       }
-    });
+    } else {
+      // If date is unparseable, it goes into the non-event buckets to keep totals mathematically sound
+      addTrade(nonFomc, r);
+      addTrade(nonCpi, r);
+      addTrade(nonNfp, r);
+    }
   });
 
   const chartData = DAY_NAMES.map((name, idx) => ({
@@ -187,17 +130,8 @@ const StatsRow = ({ stats, label, color }) => (
 );
 
 // ── Main Component ────────────────────────────────────────────────────
-const AnalyticsView = ({ monthsData }) => {
-  if (!monthsData || monthsData.length === 0) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexDirection: 'column', gap: 16, background: 'white', borderRadius: 'var(--border-radius)', boxShadow: 'var(--shadow)' }}>
-        <TrendingUp size={64} style={{ color: 'var(--secondary)' }} />
-        <p style={{ color: 'var(--text-light)', fontWeight: 700 }}>No data to analyse yet.</p>
-      </div>
-    );
-  }
-
-  const { overall, fomc, nonFomc, cpi, nonCpi, nfp, nonNfp, chartData, bestDay } = aggregateData(monthsData);
+const AnalyticsView = ({ tradesData }) => {
+  const { overall, fomc, nonFomc, cpi, nonCpi, nfp, nonNfp, chartData, bestDay } = aggregateData(tradesData);
 
   return (
     <div className="anl-wrapper">

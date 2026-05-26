@@ -48,7 +48,7 @@ const fmt = (val) => (val > 0 ? `+${parseFloat(val.toFixed(2))}R` : `${parseFloa
 const MonthCard = ({ entry, onClick }) => {
   const rValues = (entry.data || []).map(d => d.cumulativeR);
   const endR = rValues.length > 0 ? rValues[rValues.length - 1] : 0;
-  const totalTrades = (entry.data || []).length;
+  const totalTrades = (entry.data || []).filter(d => parseFloat(d.rValue || 0) !== 0).length;
   const isWin = endR >= 0;
   return (
     <div className="cal-month-card" onClick={onClick}>
@@ -127,11 +127,12 @@ const CalendarDetail = ({ sorted, index, onBack, onPrev, onNext }) => {
           {weeks.map((week, wi) => (
             <div key={wi} className="cal-week-row">
               {week.map((day, di) => {
-                const hasR = day && dayMap[day] !== undefined;
+                const hasR = day && dayMap[day] !== undefined && parseFloat(dayMap[day]) !== 0;
                 const r = hasR ? dayMap[day] : null;
-                const isWin = r !== null && r >= 0;
+                const isWin = r !== null && parseFloat(r) > 0;
+                const isLoss = r !== null && parseFloat(r) < 0;
                 return (
-                  <div key={di} className={`cal-day-cell ${day ? 'active' : 'empty'} ${hasR ? (isWin ? 'win' : 'loss') : ''}`}>
+                  <div key={di} className={`cal-day-cell ${day ? 'active' : 'empty'} ${hasR ? (isWin ? 'win' : (isLoss ? 'loss' : '')) : ''}`}>
                     {day && (
                       <>
                         <span className="cal-day-num">{day}</span>

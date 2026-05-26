@@ -20,13 +20,13 @@ const processGroup = (trades) => {
     if (!day) return; 
     
     if (day <= 15) {
-      if (t.rValue !== 0) {
+      if (parseFloat(t.rValue || 0) !== 0) {
         h1Trades++;
         h1Net += t.rValue;
         if (t.rValue > 0) h1Wins++;
       }
     } else {
-      if (t.rValue !== 0) {
+      if (parseFloat(t.rValue || 0) !== 0) {
         h2Trades++;
         h2Net += t.rValue;
         if (t.rValue > 0) h2Wins++;

@@ -129,7 +129,7 @@ const AllTimeCurveView = ({ monthsData }) => {
     return {
       chartData: data,
       stats: {
-        totalTrades: data.filter(d => d.rValue !== 0 && d.index !== 0).length,
+        totalTrades: data.filter(d => parseFloat(d.rValue || 0) !== 0 && d.index !== 0).length,
         netR: Math.round(allTimeR * 100) / 100,
         maxDrawdown,
         maxR,

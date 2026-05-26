@@ -1,77 +1,29 @@
 import React, { useMemo, useState } from 'react';
-import { Zap, AlertTriangle, Target, Activity, Settings, TrendingUp, RefreshCcw, Calendar, Clock } from 'lucide-react';
+import { Zap, AlertTriangle, Target, Activity, Settings, TrendingUp, RefreshCcw, Calendar, Clock, LayoutList } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import '../styles/payout-simulation.css';
+import CasesPanelView from './CasesPanelView';
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-// All FOMC dates as YYYY-MM-DD strings
-const FOMC_DATES = new Set([
-  '2023-02-01','2023-03-22','2023-05-03','2023-06-14',
-  '2023-07-26','2023-09-20','2023-11-01','2023-12-13',
-  '2024-01-31','2024-03-20','2024-05-01','2024-06-12',
-  '2024-07-31','2024-09-18','2024-11-07','2024-12-18',
-  '2025-01-29','2025-03-19','2025-05-07','2025-06-18',
-  '2025-07-30','2025-09-17','2025-10-29','2025-12-10',
-]);
-
-const parseTradeDateStr = (originalText, month, year) => {
-  const monthIndex = MONTHS.indexOf(month);
-  if (monthIndex === -1) return null;
-  const match = (originalText || '').match(/(\d{1,2})[-/\s]([A-Za-z]{3})/);
-  if (!match) return null;
-  if (match[2].toLowerCase() !== SHORT_MONTHS[monthIndex].toLowerCase()) return null;
-  const day = parseInt(match[1]);
-  const mm = String(monthIndex + 1).padStart(2, '0');
-  const dd = String(day).padStart(2, '0');
-  return `${year}-${mm}-${dd}`;
-};
-
-const RealPayoutSimulationView = ({ monthsData }) => {
+const RealPayoutSimulationView = ({ tradesData }) => {
   const [targetR, setTargetR] = useState(4);
   const [maxDrawdownR, setMaxDrawdownR] = useState(-10);
   const [excludeFOMC, setExcludeFOMC] = useState(true);
   const [excludeFridays, setExcludeFridays] = useState(false);
   const [expandedScenario, setExpandedScenario] = useState(null);
+  const [showCasesPanel, setShowCasesPanel] = useState(false);
 
   const stats = useMemo(() => {
-    if (!monthsData || monthsData.length === 0) return null;
+    if (!tradesData || tradesData.length === 0) return null;
 
-    // 1. Sort all months chronologically
-    const sortedMonths = [...monthsData].sort((a, b) => {
-      const yDiff = Number(a.year) - Number(b.year);
-      if (yDiff !== 0) return yDiff;
-      return MONTHS.indexOf(a.month) - MONTHS.indexOf(b.month);
-    });
-
-    // 2. Flatten and parse trades
-    let allTrades = [];
-    sortedMonths.forEach(m => {
-      if (m.data) {
-        m.data.forEach(t => {
-          const dateStr = parseTradeDateStr(t.originalText, m.month, m.year);
-          allTrades.push({
-            ...t,
-            dateStr: dateStr || `${m.year}-${m.month}-unknown`, // fallback
-            isFOMC: dateStr ? FOMC_DATES.has(dateStr) : false
-          });
-        });
-      }
-    });
+    let allTrades = tradesData;
 
     // 3. Filter FOMC and Fridays
     let tradesToUse = allTrades;
     if (excludeFOMC) {
-      tradesToUse = tradesToUse.filter(t => !t.isFOMC);
+      tradesToUse = tradesToUse.filter(t => !t.is_fomc);
     }
     if (excludeFridays) {
-      tradesToUse = tradesToUse.filter(t => {
-        if (!t.dateStr || t.dateStr.includes('unknown')) return true;
-        const [y, m, d] = t.dateStr.split('-');
-        const dateObj = new Date(y, m - 1, d, 12, 0, 0);
-        return dateObj.getDay() !== 5; // 5 is Friday
-      });
+      tradesToUse = tradesToUse.filter(t => t.day_of_week !== 5); // 5 is Friday
     }
 
     // 4. Run continuous sequential simulation
@@ -93,18 +45,18 @@ const RealPayoutSimulationView = ({ monthsData }) => {
       let tradesTaken = 0;
       let path = [];
       let outcome = 'pending';
-      const startDateStr = tradesToUse[currentStartIndex].dateStr;
+      const startDateStr = tradesToUse[currentStartIndex].trade_date || `${tradesToUse[currentStartIndex].year_value}-${tradesToUse[currentStartIndex].month_name}-unknown`;
 
       let j = currentStartIndex;
       for (; j < tradesToUse.length; j++) {
-        if (tradesToUse[j].rValue !== 0) tradesTaken++;
-        cumulative += (tradesToUse[j].rValue || 0);
+        if (tradesToUse[j].r_value !== 0) tradesTaken++;
+        cumulative += (tradesToUse[j].r_value || 0);
         cumulative = Math.round(cumulative * 100) / 100; // Fix floating point errors
         path.push({
           tradeNo: tradesTaken,
-          dateStr: tradesToUse[j].dateStr,
-          originalText: tradesToUse[j].originalText,
-          rValue: tradesToUse[j].rValue || 0,
+          dateStr: tradesToUse[j].trade_date || `${tradesToUse[j].year_value}-${tradesToUse[j].month_name}-unknown`,
+          originalText: tradesToUse[j].original_text,
+          rValue: tradesToUse[j].r_value || 0,
           cumulative
         });
         
@@ -143,10 +95,15 @@ const RealPayoutSimulationView = ({ monthsData }) => {
 
       if (resolved) {
         // Move to the next day of reaching the target/drawdown
-        const resolutionDateStr = tradesToUse[j].dateStr;
+        const resolutionDateStr = tradesToUse[j].trade_date || `${tradesToUse[j].year_value}-${tradesToUse[j].month_name}-unknown`;
         let nextDayIndex = j + 1;
-        while (nextDayIndex < tradesToUse.length && tradesToUse[nextDayIndex].dateStr === resolutionDateStr) {
-          nextDayIndex++;
+        while (nextDayIndex < tradesToUse.length) {
+          const nextDateStr = tradesToUse[nextDayIndex].trade_date || `${tradesToUse[nextDayIndex].year_value}-${tradesToUse[nextDayIndex].month_name}-unknown`;
+          if (nextDateStr === resolutionDateStr) {
+            nextDayIndex++;
+          } else {
+            break;
+          }
         }
         currentStartIndex = nextDayIndex;
       } else {
@@ -303,9 +260,9 @@ const RealPayoutSimulationView = ({ monthsData }) => {
       runDetails
     };
 
-  }, [monthsData, targetR, maxDrawdownR, excludeFOMC, excludeFridays]);
+  }, [tradesData, targetR, maxDrawdownR, excludeFOMC, excludeFridays]);
 
-  if (!monthsData || monthsData.length === 0) {
+  if (!tradesData || tradesData.length === 0) {
     return (
       <div className="ps-wrapper" style={{ justifyContent: 'center', alignItems: 'center' }}>
         <RefreshCcw size={64} style={{ color: 'var(--secondary)' }} />
@@ -321,11 +278,30 @@ const RealPayoutSimulationView = ({ monthsData }) => {
 
   return (
     <div className="ps-wrapper">
+      {/* Cases Panel Overlay */}
+      {showCasesPanel && stats && (
+        <CasesPanelView
+          runDetails={stats.runDetails}
+          targetR={targetR}
+          maxDrawdownR={maxDrawdownR}
+          onClose={() => setShowCasesPanel(false)}
+        />
+      )}
+
       <div className="ps-header">
         <div>
           <h1 className="ps-title">Real Probability of Payout</h1>
           <p className="ps-sub">Sequential simulation tracking successive payout targets starting from 1st Jan 2023.</p>
         </div>
+        {stats && (
+          <button
+            onClick={() => setShowCasesPanel(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(99,102,241,0.35)', flexShrink: 0 }}
+          >
+            <LayoutList size={16} />
+            View All {stats.runDetails?.length} Cases
+          </button>
+        )}
       </div>
 
       <div className="ps-content">

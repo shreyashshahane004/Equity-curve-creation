@@ -7,28 +7,7 @@ const MONTHS = [
 ];
 const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-// FOMC dates – same set as in AnalyticsView
-const FOMC_DATES = new Set([
-  '2023-02-01','2023-03-22','2023-05-03','2023-06-14',
-  '2023-07-26','2023-09-20','2023-11-01','2023-12-13',
-  '2024-01-31','2024-03-20','2024-05-01','2024-06-12',
-  '2024-07-31','2024-09-18','2024-11-07','2024-12-18',
-  '2025-01-29','2025-03-19','2025-05-07','2025-06-18',
-  '2025-07-30','2025-09-17','2025-10-29','2025-12-10',
-]);
-
 // ── helpers ────────────────────────────────────────────────────────────
-const parseDateStr = (originalText, month, year) => {
-  const monthIndex = MONTHS.indexOf(month);
-  if (monthIndex === -1) return null;
-  const match = (originalText || '').match(/(\d{1,2})[-/\s]([A-Za-z]{3})/);
-  if (!match) return null;
-  if (match[2].toLowerCase() !== SHORT_MONTHS[monthIndex].toLowerCase()) return null;
-  const day = parseInt(match[1]);
-  const mm = String(monthIndex + 1).padStart(2, '0');
-  const dd = String(day).padStart(2, '0');
-  return `${year}-${mm}-${dd}`;
-};
 
 const emptyStats = () => ({ trades: 0, wins: 0, losses: 0, totalR: 0 });
 
@@ -141,39 +120,37 @@ const MonthRow = ({ monthName, monthIndex, yearStats }) => {
 };
 
 // ── main component ─────────────────────────────────────────────────────
-const MonthsPerformanceView = ({ monthsData }) => {
+const MonthsPerformanceView = ({ tradesData }) => {
   // Build a map: monthIndex -> { year -> stats (excl FOMC) }
   const monthYearMap = useMemo(() => {
     const map = {}; // map[monthIndex][year] = stats
 
-    monthsData.forEach(entry => {
-      const monthIndex = MONTHS.indexOf(entry.month);
+    (tradesData || []).forEach(trade => {
+      // Exclude FOMC days
+      if (trade.is_fomc) return;
+
+      const monthIndex = MONTHS.indexOf(trade.month_name);
       if (monthIndex === -1) return;
-      const year = String(entry.year);
+      const year = String(trade.year_value);
 
       if (!map[monthIndex]) map[monthIndex] = {};
       if (!map[monthIndex][year]) map[monthIndex][year] = emptyStats();
 
-      (entry.data || []).forEach(trade => {
-        const dateStr = parseDateStr(trade.originalText, entry.month, entry.year);
-        // Exclude FOMC days
-        if (dateStr && FOMC_DATES.has(dateStr)) return;
-        const r = trade.rValue || 0;
-        addTrade(map[monthIndex][year], r);
-      });
+      const r = trade.r_value || 0;
+      addTrade(map[monthIndex][year], r);
     });
 
     return map;
-  }, [monthsData]);
+  }, [tradesData]);
 
   // Collect all unique years present in the data
   const allYears = useMemo(() => {
     const ySet = new Set();
-    monthsData.forEach(e => ySet.add(String(e.year)));
+    (tradesData || []).forEach(t => ySet.add(String(t.year_value)));
     return [...ySet].sort();
-  }, [monthsData]);
+  }, [tradesData]);
 
-  if (!monthsData || monthsData.length === 0) {
+  if (!tradesData || tradesData.length === 0) {
     return (
       <div className="mp-empty-state">
         <span style={{ fontSize: '3rem' }}>📅</span>
