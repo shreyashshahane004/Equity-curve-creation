@@ -16,7 +16,10 @@ const BottomControls = ({
   processImage, 
   isProcessing, 
   handleSend, 
-  currentSelection 
+  currentSelection,
+  strategy,
+  setStrategy,
+  strategies = []
 }) => {
   return (
     <div className="bottom-bar">
@@ -59,6 +62,17 @@ const BottomControls = ({
       </div>
 
       <div className="controls">
+        <select 
+          className="select-input" 
+          value={strategy} 
+          onChange={(e) => setStrategy(e.target.value)}
+          style={{ minWidth: '120px', fontWeight: 700 }}
+        >
+          {strategies.map(s => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+
         <select 
           className="select-input" 
           value={month} 

@@ -22,6 +22,14 @@ const CPI_DATES = new Set(['2023-01-12','2023-02-14','2023-03-14','2023-04-12','
 const NFP_DATES = new Set(['2023-01-06','2023-02-03','2023-03-10','2023-04-07','2023-05-05','2023-06-02','2023-07-07','2023-08-04','2023-09-01','2023-10-06','2023-11-03','2023-12-08','2024-01-05','2024-02-02','2024-03-08','2024-04-05','2024-05-03','2024-06-07','2024-07-05','2024-08-02','2024-09-06','2024-10-04','2024-11-01','2024-12-06','2025-01-10','2025-02-07','2025-03-07','2025-04-04','2025-05-02','2025-06-06','2025-07-03','2025-08-01','2025-09-05']);
 
 function App() {
+  const [strategies, setStrategies] = useState(() => {
+    const saved = localStorage.getItem('trading_strategies');
+    return saved ? JSON.parse(saved) : [
+      { id: 'strat_1', name: 'Strategy 1' },
+      { id: 'strat_2', name: 'Strategy 2' }
+    ];
+  });
+  const [activeStrategy, setActiveStrategy] = useState('strat_1');
   const [monthsData, setMonthsData] = useState([]);
   const [tradesData, setTradesData] = useState([]);
   const [currentSelection, setCurrentSelection] = useState(null);
@@ -97,27 +105,58 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch both tables in parallel
-        const [curvesResult, tradesResult] = await Promise.all([
-          supabase.from('equity_curves').select('*').order('created_at', { ascending: true }),
-          supabase.from('trades').select('*').order('trade_date', { ascending: true })
-        ]);
-        
-        if (curvesResult.error) throw curvesResult.error;
-        if (tradesResult.error) throw tradesResult.error;
+        const fetchCurves = async () => {
+          const { data, error } = await supabase
+            .from('equity_curves')
+            .select('*')
+            .order('created_at', { ascending: true });
+          if (error) throw error;
+          return data;
+        };
 
-        if (tradesResult.data) {
-          setTradesData(tradesResult.data);
+        const fetchTrades = async () => {
+          let allTrades = [];
+          let from = 0;
+          const PAGE_SIZE = 1000;
+          let hasMore = true;
+
+          while (hasMore) {
+            const { data, error } = await supabase
+              .from('trades')
+              .select('*')
+              .order('trade_date', { ascending: true })
+              .range(from, from + PAGE_SIZE - 1);
+
+            if (error) throw error;
+            if (data && data.length > 0) {
+              allTrades = [...allTrades, ...data];
+              from += PAGE_SIZE;
+              if (data.length < PAGE_SIZE) {
+                hasMore = false;
+              }
+            } else {
+              hasMore = false;
+            }
+          }
+          return allTrades;
+        };
+
+        const [curvesData, tradesDataResult] = await Promise.all([
+          fetchCurves(),
+          fetchTrades()
+        ]);
+
+        if (tradesDataResult) {
+          setTradesData(tradesDataResult);
         }
 
-        if (curvesResult.data) {
-          const formattedData = curvesResult.data.map(item => ({
+        if (curvesData) {
+          const formattedData = curvesData.map(item => ({
             id: item.id,
             month: item.month,
             year: item.year,
             imageUrl: item.image_url,
-            // We NO LONGER use the JSON data from equity_curves. 
-            // We will derive it dynamically from tradesResult.data below.
+            strategy: item.strategy || 'strat_1',
           }));
           setMonthsData(formattedData);
         }
@@ -131,10 +170,29 @@ function App() {
     fetchData();
   }, []);
 
+  // Sync strategies list to localStorage
+  useEffect(() => {
+    localStorage.setItem('trading_strategies', JSON.stringify(strategies));
+  }, [strategies]);
+
+  // Filter raw months by strategy
+  const strategyMonthsData = React.useMemo(() => {
+    return monthsData.filter(m => {
+      if (activeStrategy === 'combined') return true;
+      return (m.strategy || 'strat_1') === activeStrategy;
+    });
+  }, [monthsData, activeStrategy]);
+
+  // Filter raw trades by strategy
+  const strategyTradesData = React.useMemo(() => {
+    const activeCurveIds = new Set(strategyMonthsData.map(m => m.id));
+    return tradesData.filter(t => activeCurveIds.has(t.equity_curve_id));
+  }, [tradesData, strategyMonthsData]);
+
   // Compute enrichedMonthsData which injects tradesData into monthsData
   const enrichedMonthsData = React.useMemo(() => {
-    return monthsData.map(monthEntry => {
-      const monthTrades = tradesData.filter(t => t.equity_curve_id === monthEntry.id);
+    return strategyMonthsData.map(monthEntry => {
+      const monthTrades = strategyTradesData.filter(t => t.equity_curve_id === monthEntry.id);
       
       monthTrades.sort((a, b) => {
         if (a.trade_date && b.trade_date) return new Date(a.trade_date) - new Date(b.trade_date);
@@ -154,26 +212,30 @@ function App() {
         };
       });
 
+      const stratObj = strategies.find(s => s.id === monthEntry.strategy);
+      const strategyName = stratObj ? stratObj.name : 'Strategy 1';
+
       return {
         ...monthEntry,
+        strategyName,
         data: dataForUI
       };
     });
-  }, [monthsData, tradesData]);
+  }, [strategyMonthsData, strategyTradesData, strategies]);
 
   // Filtered trades (respects all global toggles)
   const filteredTradesData = React.useMemo(() => {
-    let result = tradesData;
+    let result = strategyTradesData;
     if (excludeFOMC)    result = result.filter(t => !t.is_fomc);
     if (excludeFridays) result = result.filter(t => t.day_of_week !== 5);
     if (excludeRed)    result = result.filter(t => !newsDates.red.has(t.trade_date));
     if (excludeOrange) result = result.filter(t => !newsDates.orange.has(t.trade_date));
     if (excludeYellow) result = result.filter(t => !newsDates.yellow.has(t.trade_date));
     return result;
-  }, [tradesData, excludeFOMC, excludeFridays, excludeRed, excludeOrange, excludeYellow, newsDates]);
+  }, [strategyTradesData, excludeFOMC, excludeFridays, excludeRed, excludeOrange, excludeYellow, newsDates]);
 
   // Build filtered enriched months from filteredTradesData
-  const buildEnrichedMonths = (sourceTrades) => monthsData.map(monthEntry => {
+  const buildEnrichedMonths = (sourceTrades) => strategyMonthsData.map(monthEntry => {
     const monthTrades = sourceTrades.filter(t => t.equity_curve_id === monthEntry.id);
     monthTrades.sort((a, b) => {
       if (a.trade_date && b.trade_date) return new Date(a.trade_date) - new Date(b.trade_date);
@@ -185,12 +247,15 @@ function App() {
       cumulativeR = Math.round(cumulativeR * 100) / 100;
       return { id: idx + 1, originalText: t.original_text, rValueStr: String(t.r_value || 0), rValue: t.r_value || 0, cumulativeR };
     });
-    return { ...monthEntry, data: dataForUI };
+    const stratObj = strategies.find(s => s.id === monthEntry.strategy);
+    const strategyName = stratObj ? stratObj.name : 'Strategy 1';
+
+    return { ...monthEntry, strategyName, data: dataForUI };
   });
 
   const filteredEnrichedMonthsData = React.useMemo(
     () => buildEnrichedMonths(filteredTradesData),
-    [monthsData, filteredTradesData]
+    [strategyMonthsData, filteredTradesData, strategies]
   );
 
   // Sync to local storage as a backup
@@ -264,7 +329,8 @@ function App() {
           month: entry.month,
           year: entry.year,
           image_url: entry.imageUrl, // The base64 image string is saved perfectly here!
-          data: entry.data
+          data: entry.data,
+          strategy: entry.strategy || 'strat_1'
         }]);
         
       if (error) throw error;
@@ -292,7 +358,8 @@ function App() {
           month: updatedData.month,
           year: updatedData.year,
           image_url: updatedData.imageUrl,
-          data: updatedData.data
+          data: updatedData.data,
+          strategy: updatedData.strategy || 'strat_1'
         })
         .eq('id', id);
         
@@ -318,16 +385,18 @@ function App() {
 
   const handleNextCase = () => {
     if (!selectedCaseForModal) return;
-    const currentIndex = monthsData.findIndex(m => m.id === selectedCaseForModal.id);
-    const nextIndex = (currentIndex + 1) % monthsData.length;
-    setSelectedCaseForModal(monthsData[nextIndex]);
+    const currentIndex = filteredEnrichedMonthsData.findIndex(m => m.id === selectedCaseForModal.id);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % filteredEnrichedMonthsData.length;
+    setSelectedCaseForModal(filteredEnrichedMonthsData[nextIndex]);
   };
 
   const handlePrevCase = () => {
     if (!selectedCaseForModal) return;
-    const currentIndex = monthsData.findIndex(m => m.id === selectedCaseForModal.id);
-    const prevIndex = (currentIndex - 1 + monthsData.length) % monthsData.length;
-    setSelectedCaseForModal(monthsData[prevIndex]);
+    const currentIndex = filteredEnrichedMonthsData.findIndex(m => m.id === selectedCaseForModal.id);
+    if (currentIndex === -1) return;
+    const prevIndex = (currentIndex - 1 + filteredEnrichedMonthsData.length) % filteredEnrichedMonthsData.length;
+    setSelectedCaseForModal(filteredEnrichedMonthsData[prevIndex]);
   };
 
   const handleDeleteData = async (id) => {
@@ -367,6 +436,10 @@ function App() {
         onDelete={handleDeleteData}
         currentView={view}
         onNavigate={handleNavigate}
+        strategies={strategies}
+        setStrategies={setStrategies}
+        activeStrategy={activeStrategy}
+        setActiveStrategy={setActiveStrategy}
       />
       
       <div className="main-content">
@@ -479,6 +552,8 @@ function App() {
             onAddData={handleAddData} 
             onUpdateData={handleUpdateData}
             onNewInput={() => setCurrentSelection(null)}
+            strategies={strategies}
+            activeStrategy={activeStrategy}
           />
         )}
 
@@ -535,15 +610,15 @@ function App() {
         )}
 
         {view === 'payout-simulation' && (
-          <PayoutSimulationView tradesData={tradesData} />
+          <PayoutSimulationView tradesData={strategyTradesData} />
         )}
 
         {view === 'real-payout-simulation' && (
-          <RealPayoutSimulationView tradesData={tradesData} />
+          <RealPayoutSimulationView tradesData={strategyTradesData} />
         )}
 
         {view === 'monthly-payout-plan' && (
-          <MonthlyPayoutPlanView tradesData={tradesData} />
+          <MonthlyPayoutPlanView tradesData={strategyTradesData} />
         )}
 
         {view === 'whiteboard' && (
@@ -555,7 +630,7 @@ function App() {
         {view === 'news-events' && (
           <NewsEventsView
             newsEvents={newsEvents}
-            tradesData={tradesData}
+            tradesData={strategyTradesData}
             onRefresh={refreshNewsEvents}
           />
         )}

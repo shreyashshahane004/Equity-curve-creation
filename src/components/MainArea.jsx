@@ -7,13 +7,25 @@ import EquityChart from './MainAreaComp/EquityChart';
 import DataTable from './MainAreaComp/DataTable';
 import BottomControls from './MainAreaComp/BottomControls';
 
-const MainArea = ({ currentSelection, onAddData, onUpdateData, onNewInput, isPreview = false, isExpanded = false }) => {
+const MainArea = ({ 
+  currentSelection, 
+  onAddData, 
+  onUpdateData, 
+  onNewInput, 
+  isPreview = false, 
+  isExpanded = false,
+  strategies = [],
+  activeStrategy = 'strat_1'
+}) => {
   const [pastedImage, setPastedImage] = useState(currentSelection?.imageUrl || null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState(currentSelection?.data || []);
   const [month, setMonth] = useState(currentSelection?.month || 'January');
   const [year, setYear] = useState(currentSelection?.year || '2026');
   const [winLoss, setWinLoss] = useState('Win');
+  const [strategy, setStrategy] = useState(
+    currentSelection?.strategy || (activeStrategy !== 'combined' ? activeStrategy : (strategies[0]?.id || 'strat_1'))
+  );
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -21,7 +33,10 @@ const MainArea = ({ currentSelection, onAddData, onUpdateData, onNewInput, isPre
     setExtractedData(currentSelection?.data || []);
     setMonth(currentSelection?.month || 'January');
     setYear(currentSelection?.year || '2026');
-  }, [currentSelection]);
+    setStrategy(
+      currentSelection?.strategy || (activeStrategy !== 'combined' ? activeStrategy : (strategies[0]?.id || 'strat_1'))
+    );
+  }, [currentSelection, activeStrategy, strategies]);
 
   const handlePaste = (e) => {
     const items = e.clipboardData.items;
@@ -175,7 +190,7 @@ const MainArea = ({ currentSelection, onAddData, onUpdateData, onNewInput, isPre
 
   const handleSend = () => {
     if (!pastedImage) return alert("Please paste an image first!");
-    const data = { month, year, imageUrl: pastedImage, data: extractedData };
+    const data = { month, year, strategy, imageUrl: pastedImage, data: extractedData };
     if (currentSelection) {
       onUpdateData(currentSelection.id, data);
       alert("Changes saved successfully!");
@@ -187,7 +202,7 @@ const MainArea = ({ currentSelection, onAddData, onUpdateData, onNewInput, isPre
   const handleSave = async () => {
     if (onUpdateData && currentSelection) {
       try {
-        const error = await onUpdateData(currentSelection.id, { month, year, imageUrl: pastedImage, data: extractedData });
+        const error = await onUpdateData(currentSelection.id, { month, year, strategy, imageUrl: pastedImage, data: extractedData });
         alert(error ? "Error saving changes: " + error : "Changes saved successfully!");
       } catch (err) { alert("Unexpected error: " + err.message); }
     }
@@ -258,6 +273,7 @@ const MainArea = ({ currentSelection, onAddData, onUpdateData, onNewInput, isPre
           month={month} setMonth={setMonth} year={year} setYear={setYear}
           winLoss={winLoss} setWinLoss={setWinLoss} processImage={processImage}
           isProcessing={isProcessing} handleSend={handleSend} currentSelection={currentSelection}
+          strategy={strategy} setStrategy={setStrategy} strategies={strategies}
         />
       )}
     </div>
