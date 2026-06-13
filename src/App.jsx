@@ -15,7 +15,282 @@ import WhiteboardView from './components/WhiteboardView';
 import NewsEventsView from './components/NewsEventsView';
 import { supabase } from './supabaseClient';
 import { fetchNewsEvents, seedIfEmpty, alignNewsImpacts } from './supabase/newsEventsService';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
+
+// Weekday options configuration
+const WEEKDAY_OPTIONS = [
+  { index: 1, label: 'Mon' },
+  { index: 2, label: 'Tue' },
+  { index: 3, label: 'Wed' },
+  { index: 4, label: 'Thu' },
+  { index: 5, label: 'Fri' },
+];
+
+const GlobalFilterPanel = ({
+  open,
+  onClose,
+  commonMonthsOnly,
+  setCommonMonthsOnly,
+  activeDays,
+  setActiveDays,
+  hasMultipleStrategies,
+  anchorRef,
+}) => {
+  const panelRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handleOutside = (e) => {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target) &&
+        anchorRef.current && !anchorRef.current.contains(e.target)
+      ) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [open, onClose, anchorRef]);
+
+  if (!open) return null;
+
+  const toggleDay = (idx) => {
+    setActiveDays(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) {
+        if (next.size === 1) return prev; // keep at least one
+        next.delete(idx);
+      } else {
+        next.add(idx);
+      }
+      return next;
+    });
+  };
+
+  const allDaysOn = WEEKDAY_OPTIONS.every(d => activeDays.has(d.index));
+  const toggleAllDays = () => {
+    if (allDaysOn) {
+      setActiveDays(new Set([1])); // keep Monday minimum
+    } else {
+      setActiveDays(new Set([1, 2, 3, 4, 5]));
+    }
+  };
+
+  const activeFilterCount = (commonMonthsOnly ? 1 : 0) + (allDaysOn ? 0 : 1);
+
+  return (
+    <div
+      ref={panelRef}
+      style={{
+        position: 'absolute',
+        top: '100%',
+        right: 20,
+        marginTop: 8,
+        width: 320,
+        background: 'white',
+        borderRadius: 18,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.07)',
+        border: '1px solid #f0f0f4',
+        padding: '20px 20px 18px',
+        zIndex: 999,
+        animation: 'global-panel-in 0.18s cubic-bezier(.4,0,.2,1)',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <SlidersHorizontal size={15} style={{ color: 'var(--primary)' }} />
+          <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#292F36', letterSpacing: '0.02em' }}>
+            Advanced Filters
+          </span>
+          {activeFilterCount > 0 && (
+            <span style={{
+              background: 'var(--primary)',
+              color: 'white',
+              borderRadius: '50%',
+              width: 18, height: 18,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.68rem', fontWeight: 800
+            }}>{activeFilterCount}</span>
+          )}
+        </div>
+        <button
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 2, display: 'flex', alignItems: 'center' }}
+        >
+          <X size={15} />
+        </button>
+      </div>
+
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+          Strategy Overlap
+        </div>
+        <button
+          onClick={() => setCommonMonthsOnly(v => !v)}
+          disabled={!hasMultipleStrategies}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '11px 14px',
+            borderRadius: 12,
+            border: `1.5px solid ${commonMonthsOnly ? 'var(--primary)' : '#e5e7eb'}`,
+            cursor: hasMultipleStrategies ? 'pointer' : 'not-allowed',
+            background: commonMonthsOnly ? 'rgba(67,198,172,0.07)' : '#fafafa',
+            transition: 'all 0.2s',
+            textAlign: 'left',
+            opacity: hasMultipleStrategies ? 1 : 0.45,
+          }}
+        >
+          <div style={{
+            width: 38, height: 22,
+            background: commonMonthsOnly ? 'var(--primary)' : '#d1d5db',
+            borderRadius: 11,
+            position: 'relative',
+            flexShrink: 0,
+            transition: 'background 0.2s',
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: 3, left: commonMonthsOnly ? 19 : 3,
+              width: 16, height: 16,
+              background: 'white',
+              borderRadius: '50%',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+              transition: 'left 0.18s',
+            }} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#292F36' }}>
+              Common Months Only
+            </div>
+            <div style={{ fontWeight: 600, fontSize: '0.72rem', color: '#9ca3af', marginTop: 2 }}>
+              Only months present in all strategies
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div style={{ height: 1, background: '#f3f4f6', marginBottom: 18 }} />
+
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Days of Week
+          </span>
+          <button
+            onClick={toggleAllDays}
+            style={{
+              fontSize: '0.7rem', fontWeight: 700,
+              color: allDaysOn ? '#9ca3af' : 'var(--primary)',
+              background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0',
+            }}
+          >
+            {allDaysOn ? 'Clear All' : 'Select All'}
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          {WEEKDAY_OPTIONS.map(({ index, label }) => {
+            const isOn = activeDays.has(index);
+            return (
+              <button
+                key={index}
+                onClick={() => toggleDay(index)}
+                style={{
+                  flex: 1,
+                  padding: '10px 4px',
+                  borderRadius: 10,
+                  border: `1.5px solid ${isOn ? 'var(--primary)' : '#e5e7eb'}`,
+                  background: isOn ? 'rgba(67,198,172,0.09)' : '#fafafa',
+                  cursor: 'pointer',
+                  fontWeight: 800,
+                  fontSize: '0.8rem',
+                  color: isOn ? 'var(--primary)' : '#9ca3af',
+                  transition: 'all 0.15s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <span>{label}</span>
+                <div style={{
+                  width: 6, height: 6,
+                  borderRadius: '50%',
+                  background: isOn ? 'var(--primary)' : '#e5e7eb',
+                  transition: 'background 0.15s',
+                }} />
+              </button>
+            );
+          })}
+        </div>
+
+        {!allDaysOn && (
+          <div style={{
+            marginTop: 10,
+            padding: '7px 12px',
+            background: 'rgba(67,198,172,0.07)',
+            borderRadius: 8,
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            color: 'var(--primary)',
+          }}>
+            Showing: {WEEKDAY_OPTIONS.filter(d => activeDays.has(d.index)).map(d => d.label).join(', ')} trades only
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const HamburgerBtn = ({ onClick, hasActiveFilters, btnRef }) => (
+  <button
+    ref={btnRef}
+    onClick={onClick}
+    title="Advanced Filters"
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+      padding: '8px 10px',
+      borderRadius: 10,
+      border: `1.5px solid ${hasActiveFilters ? 'var(--primary)' : '#e5e7eb'}`,
+      background: hasActiveFilters ? 'rgba(67,198,172,0.08)' : 'white',
+      cursor: 'pointer',
+      position: 'relative',
+      transition: 'all 0.18s',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: 'auto',
+    }}
+  >
+    {[0, 1, 2].map(i => (
+      <span
+        key={i}
+        style={{
+          display: 'block',
+          width: i === 1 ? 14 : 18,
+          height: 2,
+          borderRadius: 2,
+          background: hasActiveFilters ? 'var(--primary)' : '#9ca3af',
+          transition: 'all 0.18s',
+        }}
+      />
+    ))}
+    {hasActiveFilters && (
+      <span style={{
+        position: 'absolute',
+        top: -4, right: -4,
+        width: 10, height: 10,
+        background: 'var(--primary)',
+        borderRadius: '50%',
+        border: '2px solid white',
+      }} />
+    )}
+  </button>
+);
 
 const FOMC_DATES = new Set(['2023-02-01','2023-03-22','2023-05-03','2023-06-14','2023-07-26','2023-09-20','2023-11-01','2023-12-13','2024-01-31','2024-03-20','2024-05-01','2024-06-12','2024-07-31','2024-09-18','2024-11-07','2024-12-18','2025-01-29','2025-03-19','2025-05-07','2025-06-18','2025-07-30','2025-09-17','2025-10-29','2025-12-10']);
 const CPI_DATES = new Set(['2023-01-12','2023-02-14','2023-03-14','2023-04-12','2023-05-10','2023-06-13','2023-07-12','2023-08-10','2023-09-13','2023-10-12','2023-11-14','2023-12-12','2024-01-11','2024-02-13','2024-03-12','2024-04-10','2024-05-15','2024-06-12','2024-07-11','2024-08-14','2024-09-11','2024-10-10','2024-11-13','2024-12-11','2025-01-15','2025-02-12','2025-03-12','2025-04-10','2025-05-13','2025-06-11','2025-07-15','2025-08-12','2025-09-11','2025-10-24','2025-12-18']);
@@ -43,11 +318,17 @@ function App() {
   const [excludeOrange, setExcludeOrange] = useState(false);
   const [excludeYellow, setExcludeYellow] = useState(false);
 
+  // Global custom advanced filters (Common Months & Days of Week)
+  const [commonMonthsOnly, setCommonMonthsOnly] = useState(false);
+  const [activeDays, setActiveDays] = useState(new Set([1, 2, 3, 4, 5])); // Mon-Fri on by default
+  const [globalFilterOpen, setGlobalFilterOpen] = useState(false);
+  const filterBtnRef = React.useRef(null);
+
   // News events state
   const [newsEvents, setNewsEvents] = useState([]);
 
   // Views where the global filter bar should appear
-  const FILTER_VIEWS = new Set(['gallery','calendar','analytics','months-performance','seasonal-tendency','all-time-curve','half-month-edge','profit-target']);
+  const FILTER_VIEWS = new Set(['gallery','calendar','analytics','months-performance','seasonal-tendency','all-time-curve','half-month-edge','profit-target','monthly-payout-plan']);
   const showFilterBar = FILTER_VIEWS.has(view);
 
   // ── Build impact date sets from newsEvents (Hierarchical & Exclusive Classification) ──
@@ -189,41 +470,88 @@ function App() {
     return tradesData.filter(t => activeCurveIds.has(t.equity_curve_id));
   }, [tradesData, strategyMonthsData]);
 
-  // Compute enrichedMonthsData which injects tradesData into monthsData
-  const enrichedMonthsData = React.useMemo(() => {
+  // Build enriched months from a given set of trades
+  const buildEnrichedMonths = React.useCallback((sourceTrades) => {
+    if (activeStrategy === 'combined') {
+      const grouped = {};
+      strategyMonthsData.forEach(monthEntry => {
+        const key = `${monthEntry.year}-${monthEntry.month}`;
+        if (!grouped[key]) {
+          grouped[key] = {
+            id: `combined_${key}`,
+            month: monthEntry.month,
+            year: monthEntry.year,
+            strategyName: 'Combined',
+            strategy: 'combined',
+            curves: [monthEntry.id],
+            imageUrl: monthEntry.imageUrl
+          };
+        } else {
+          grouped[key].curves.push(monthEntry.id);
+        }
+      });
+
+      return Object.values(grouped).map(group => {
+        const monthTrades = sourceTrades.filter(t => group.curves.includes(t.equity_curve_id));
+        monthTrades.sort((a, b) => {
+          if (a.trade_date && b.trade_date) return new Date(a.trade_date) - new Date(b.trade_date);
+          return 0;
+        });
+
+        let cumulativeR = 0;
+        const dataForUI = monthTrades.map((t, idx) => {
+          cumulativeR += (t.r_value || 0);
+          cumulativeR = Math.round(cumulativeR * 100) / 100;
+          return { id: idx + 1, originalText: t.original_text, rValueStr: String(t.r_value || 0), rValue: t.r_value || 0, cumulativeR };
+        });
+
+        return { ...group, data: dataForUI };
+      });
+    }
+
     return strategyMonthsData.map(monthEntry => {
-      const monthTrades = strategyTradesData.filter(t => t.equity_curve_id === monthEntry.id);
-      
+      const monthTrades = sourceTrades.filter(t => t.equity_curve_id === monthEntry.id);
       monthTrades.sort((a, b) => {
         if (a.trade_date && b.trade_date) return new Date(a.trade_date) - new Date(b.trade_date);
         return 0;
       });
-
       let cumulativeR = 0;
       const dataForUI = monthTrades.map((t, idx) => {
         cumulativeR += (t.r_value || 0);
         cumulativeR = Math.round(cumulativeR * 100) / 100;
-        return {
-          id: idx + 1,
-          originalText: t.original_text,
-          rValueStr: String(t.r_value || 0),
-          rValue: t.r_value || 0,
-          cumulativeR: cumulativeR
-        };
+        return { id: idx + 1, originalText: t.original_text, rValueStr: String(t.r_value || 0), rValue: t.r_value || 0, cumulativeR };
       });
-
       const stratObj = strategies.find(s => s.id === monthEntry.strategy);
       const strategyName = stratObj ? stratObj.name : 'Strategy 1';
 
-      return {
-        ...monthEntry,
-        strategyName,
-        data: dataForUI
-      };
+      return { ...monthEntry, strategyName, data: dataForUI };
     });
-  }, [strategyMonthsData, strategyTradesData, strategies]);
+  }, [strategyMonthsData, strategies, activeStrategy]);
 
-  // Filtered trades (respects all global toggles)
+  // Compute enrichedMonthsData which injects tradesData into monthsData
+  const enrichedMonthsData = React.useMemo(() => {
+    return buildEnrichedMonths(strategyTradesData);
+  }, [buildEnrichedMonths, strategyTradesData]);
+
+  // Compute the set of months (year-month keys) that exist in BOTH strategies
+  const commonMonthKeys = React.useMemo(() => {
+    const byStrategy = {};
+    monthsData.forEach(m => {
+      const sid = m.strategy || 'strat_1';
+      if (!byStrategy[sid]) byStrategy[sid] = new Set();
+      byStrategy[sid].add(`${m.year}-${m.month}`);
+    });
+    const stratIds = Object.keys(byStrategy);
+    if (stratIds.length < 2) return null; // Not enough strategies to intersect
+    const [first, ...rest] = stratIds;
+    let common = byStrategy[first];
+    rest.forEach(sid => {
+      common = new Set([...common].filter(k => byStrategy[sid].has(k)));
+    });
+    return common;
+  }, [monthsData]);
+
+  // Filtered trades (respects all global toggles including common months + day filters)
   const filteredTradesData = React.useMemo(() => {
     let result = strategyTradesData;
     if (excludeFOMC)    result = result.filter(t => !t.is_fomc);
@@ -231,32 +559,33 @@ function App() {
     if (excludeRed)    result = result.filter(t => !newsDates.red.has(t.trade_date));
     if (excludeOrange) result = result.filter(t => !newsDates.orange.has(t.trade_date));
     if (excludeYellow) result = result.filter(t => !newsDates.yellow.has(t.trade_date));
+
+    // Filter to common months across all strategies
+    if (commonMonthsOnly && commonMonthKeys) {
+      result = result.filter(t => {
+        const curve = monthsData.find(m => m.id === t.equity_curve_id);
+        if (!curve) return false;
+        return commonMonthKeys.has(`${curve.year}-${curve.month}`);
+      });
+    }
+
+    // Day of week filter (only keep trades whose day_of_week is in activeDays)
+    if (activeDays.size < 7) {
+      result = result.filter(t => t.day_of_week !== null && activeDays.has(t.day_of_week));
+    }
+
     return result;
-  }, [strategyTradesData, excludeFOMC, excludeFridays, excludeRed, excludeOrange, excludeYellow, newsDates]);
+  }, [strategyTradesData, excludeFOMC, excludeFridays, excludeRed, excludeOrange, excludeYellow, newsDates, commonMonthsOnly, commonMonthKeys, activeDays, monthsData]);
 
-  // Build filtered enriched months from filteredTradesData
-  const buildEnrichedMonths = (sourceTrades) => strategyMonthsData.map(monthEntry => {
-    const monthTrades = sourceTrades.filter(t => t.equity_curve_id === monthEntry.id);
-    monthTrades.sort((a, b) => {
-      if (a.trade_date && b.trade_date) return new Date(a.trade_date) - new Date(b.trade_date);
-      return 0;
-    });
-    let cumulativeR = 0;
-    const dataForUI = monthTrades.map((t, idx) => {
-      cumulativeR += (t.r_value || 0);
-      cumulativeR = Math.round(cumulativeR * 100) / 100;
-      return { id: idx + 1, originalText: t.original_text, rValueStr: String(t.r_value || 0), rValue: t.r_value || 0, cumulativeR };
-    });
-    const stratObj = strategies.find(s => s.id === monthEntry.strategy);
-    const strategyName = stratObj ? stratObj.name : 'Strategy 1';
+  // buildEnrichedMonths is now defined earlier and reused
 
-    return { ...monthEntry, strategyName, data: dataForUI };
-  });
-
-  const filteredEnrichedMonthsData = React.useMemo(
-    () => buildEnrichedMonths(filteredTradesData),
-    [strategyMonthsData, filteredTradesData, strategies]
-  );
+  const filteredEnrichedMonthsData = React.useMemo(() => {
+    let result = buildEnrichedMonths(filteredTradesData);
+    if (commonMonthsOnly && commonMonthKeys) {
+      result = result.filter(m => commonMonthKeys.has(`${m.year}-${m.month}`));
+    }
+    return result;
+  }, [buildEnrichedMonths, filteredTradesData, commonMonthsOnly, commonMonthKeys]);
 
   // Sync to local storage as a backup
   useEffect(() => {
@@ -451,7 +780,8 @@ function App() {
             padding: '10px 20px', background: '#fff',
             borderBottom: '1px solid #f0f0f0',
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            flexShrink: 0, flexWrap: 'wrap'
+            flexShrink: 0, flexWrap: 'wrap',
+            position: 'relative'
           }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Filters:</span>
             {/* FOMC Toggle */}
@@ -542,6 +872,23 @@ function App() {
                 ].filter(Boolean).join(' + ')} removed from stats
               </span>
             )}
+
+            {/* Global hamburger dropdown trigger */}
+            <HamburgerBtn
+              btnRef={filterBtnRef}
+              hasActiveFilters={commonMonthsOnly || activeDays.size < 5}
+              onClick={() => setGlobalFilterOpen(v => !v)}
+            />
+            <GlobalFilterPanel
+              open={globalFilterOpen}
+              onClose={() => setGlobalFilterOpen(false)}
+              commonMonthsOnly={commonMonthsOnly}
+              setCommonMonthsOnly={setCommonMonthsOnly}
+              activeDays={activeDays}
+              setActiveDays={setActiveDays}
+              hasMultipleStrategies={(commonMonthKeys?.size ?? 0) > 0 || strategies.length > 1}
+              anchorRef={filterBtnRef}
+            />
           </div>
         )}
 
@@ -618,7 +965,7 @@ function App() {
         )}
 
         {view === 'monthly-payout-plan' && (
-          <MonthlyPayoutPlanView tradesData={strategyTradesData} />
+          <MonthlyPayoutPlanView tradesData={filteredTradesData} />
         )}
 
         {view === 'whiteboard' && (

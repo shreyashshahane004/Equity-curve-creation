@@ -57,6 +57,7 @@ const StatBox = ({ title, value, sub, icon: Icon, color }) => (
   </div>
 );
 
+// ── Main Component ────────────────────────────────────────────────────
 const AllTimeCurveView = ({ monthsData }) => {
   const { chartData, stats } = useMemo(() => {
     if (!monthsData || monthsData.length === 0) return { chartData: [], stats: null };
@@ -93,7 +94,7 @@ const AllTimeCurveView = ({ monthsData }) => {
           label,
           rValue: trade.rValue,
           cumulativeR: parseFloat(allTimeR.toFixed(2)),
-          drawdown: 0 // Will calculate properly below
+          drawdown: 0
         });
       });
     });
@@ -122,7 +123,6 @@ const AllTimeCurveView = ({ monthsData }) => {
       }
     });
 
-    // Peak overall
     const maxR = data.reduce((max, p) => p.cumulativeR > max ? p.cumulativeR : max, 0);
     const minR = data.reduce((min, p) => p.cumulativeR < min ? p.cumulativeR : min, 0);
 
@@ -141,9 +141,17 @@ const AllTimeCurveView = ({ monthsData }) => {
 
   if (!chartData || chartData.length <= 1) {
     return (
-      <div className="atc-empty-state">
-        <TrendingUp size={64} style={{ color: 'var(--secondary)' }} />
-        <p>No trades recorded yet. Start adding data to see your all-time curve!</p>
+      <div className="atc-wrapper">
+        <div className="atc-page-header">
+          <div>
+            <h1 className="atc-page-title">All-Time Equity Curve</h1>
+            <p className="atc-page-sub">Master chronological view of all your trading history</p>
+          </div>
+        </div>
+        <div className="atc-empty-state" style={{ height: 400, marginTop: 20 }}>
+          <TrendingUp size={64} style={{ color: 'var(--secondary)' }} />
+          <p>No trades match the current filter selection. Adjust filters to see data!</p>
+        </div>
       </div>
     );
   }
@@ -224,7 +232,6 @@ const AllTimeCurveView = ({ monthsData }) => {
                 tickLine={false} 
                 tickFormatter={(tick) => {
                   const label = chartData[tick]?.label;
-                  // Only show tick if it's the start of a new month roughly
                   return tick % Math.max(1, Math.floor(chartData.length / 10)) === 0 ? label : '';
                 }}
                 tick={{ fill: '#9ca3af', fontWeight: 700, fontSize: 12 }} 
@@ -249,7 +256,6 @@ const AllTimeCurveView = ({ monthsData }) => {
                 activeDot={{ r: 6, strokeWidth: 0, fill: netR >= 0 ? "#4ECDC4" : "#FF6B6B" }}
               />
 
-              {/* Highlight the Max Drawdown Zone (rendered after Area so it appears on top) */}
               {maxDrawdown < 0 && troughPeakIndex !== troughIndex && (
                 <ReferenceArea 
                   x1={troughPeakIndex} 

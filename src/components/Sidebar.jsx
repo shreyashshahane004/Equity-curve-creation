@@ -265,23 +265,25 @@ const Sidebar = ({
                       </span>
                     )}
                   </span>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(data.id);
-                    }}
-                    style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      color: isActive ? 'white' : '#ff6b6b',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px'
-                    }}
-                    title="Delete"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {activeStrategy !== 'combined' && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(data.id);
+                      }}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: isActive ? 'white' : '#ff6b6b',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px'
+                      }}
+                      title="Delete"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
                 <div style={{ 
                   fontSize: '0.8rem', 

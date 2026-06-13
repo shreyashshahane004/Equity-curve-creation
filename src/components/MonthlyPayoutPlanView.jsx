@@ -9,8 +9,6 @@ const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 const MonthlyPayoutPlanView = ({ tradesData }) => {
   const [targetR, setTargetR] = useState(4);
   const [maxDrawdownR, setMaxDrawdownR] = useState(-10);
-  const [excludeFOMC, setExcludeFOMC] = useState(true);
-  const [excludeFridays, setExcludeFridays] = useState(false);
   const [mode, setMode] = useState('fresh'); // 'fresh' | 'carryover' | 'continuous'
   const [expandedMonth, setExpandedMonth] = useState(null);
 
@@ -19,8 +17,6 @@ const MonthlyPayoutPlanView = ({ tradesData }) => {
 
     // Apply filters
     let trades = tradesData;
-    if (excludeFOMC) trades = trades.filter(t => !t.is_fomc);
-    if (excludeFridays) trades = trades.filter(t => t.day_of_week !== 5);
 
     // Find starting index for each month
     const monthStartIndices = [];
@@ -118,7 +114,7 @@ const MonthlyPayoutPlanView = ({ tradesData }) => {
     });
 
     return { cases, wins, losses, hitRate, avgTrades, byYear, totalMonths: cases.length };
-  }, [tradesData, targetR, excludeFOMC, excludeFridays, mode]);
+  }, [tradesData, targetR, mode]);
 
   if (!tradesData || tradesData.length === 0) {
     return (
@@ -203,36 +199,6 @@ const MonthlyPayoutPlanView = ({ tradesData }) => {
             <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#FF6B6B', minWidth: 36 }}>{maxDrawdownR}R</span>
           </div>
         )}
-
-        {/* FOMC toggle */}
-        <button
-          onClick={() => setExcludeFOMC(v => !v)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '7px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
-            fontWeight: 700, fontSize: '0.8rem', transition: 'all 0.2s',
-            background: excludeFOMC ? '#f59e0b' : '#f3f4f6',
-            color: excludeFOMC ? '#fff' : '#6b7280',
-            boxShadow: excludeFOMC ? '0 2px 8px rgba(245,158,11,0.35)' : 'none'
-          }}
-        >
-          📅 FOMC {excludeFOMC ? 'Excluded' : 'Included'}
-        </button>
-
-        {/* Friday toggle */}
-        <button
-          onClick={() => setExcludeFridays(v => !v)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '7px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
-            fontWeight: 700, fontSize: '0.8rem', transition: 'all 0.2s',
-            background: excludeFridays ? '#8b5cf6' : '#f3f4f6',
-            color: excludeFridays ? '#fff' : '#6b7280',
-            boxShadow: excludeFridays ? '0 2px 8px rgba(139,92,246,0.35)' : 'none'
-          }}
-        >
-          🗓️ Fridays {excludeFridays ? 'Excluded' : 'Included'}
-        </button>
       </div>
 
       {stats && (

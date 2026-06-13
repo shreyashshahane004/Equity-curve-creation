@@ -24,13 +24,18 @@ const ProfitTargetView = ({ monthsData }) => {
       let successfulMonths = [];
       let failedMonths = [];
       
+      let validMonthsCount = 0;
+      
       monthsData.forEach(entry => {
+        if (!entry.data || entry.data.length === 0) return;
+        
+        validMonthsCount++;
         let cumulative = 0;
         let hit = false;
         let tradesCount = 0;
         const monthLabel = `${entry.month.substring(0,3)} '${entry.year.toString().slice(-2)}`;
         
-        for (let trade of (entry.data || [])) {
+        for (let trade of entry.data) {
           if (parseFloat(trade.rValue || 0) !== 0) tradesCount++;
           cumulative += trade.rValue;
           cumulative = Math.round(cumulative * 100) / 100;
@@ -49,13 +54,13 @@ const ProfitTargetView = ({ monthsData }) => {
         }
       });
       
-      const hitRate = monthsData.length > 0 ? (hitCount / monthsData.length) * 100 : 0;
+      const hitRate = validMonthsCount > 0 ? (hitCount / validMonthsCount) * 100 : 0;
       
       return {
         target: t,
         targetLabel: `${t}R`,
         hitCount,
-        totalMonths: monthsData.length,
+        totalMonths: validMonthsCount,
         hitRate,
         avgTradesToHit: hitCount > 0 ? sumTradesToHit / hitCount : 0,
         successfulMonths,

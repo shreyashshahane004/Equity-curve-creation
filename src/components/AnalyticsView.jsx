@@ -51,7 +51,6 @@ const aggregateData = (tradesData) => {
         else ds.lossR = Math.round((ds.lossR + Math.abs(r)) * 100) / 100;
       }
     } else {
-      // If date is unparseable, it goes into the non-event buckets to keep totals mathematically sound
       addTrade(nonFomc, r);
       addTrade(nonCpi, r);
       addTrade(nonNfp, r);
