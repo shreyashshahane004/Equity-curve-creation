@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart2, LayoutGrid, Trash2, CalendarDays, TrendingUp, Activity, PieChart, LineChart, SplitSquareHorizontal, Target, Folder, ChevronDown, CalendarCheck, PenTool, Newspaper, Settings, Plus, X } from 'lucide-react';
+import { BarChart2, LayoutGrid, Trash2, CalendarDays, TrendingUp, Activity, PieChart, LineChart, SplitSquareHorizontal, Target, Folder, ChevronDown, CalendarCheck, PenTool, Newspaper, Settings, Plus, X, ShieldCheck, TableProperties } from 'lucide-react';
 
 const Sidebar = ({ 
   monthsData, 
@@ -200,6 +200,20 @@ const Sidebar = ({
         >
           <CalendarCheck size={20} />
           Monthly Payout Plan
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'account-passing' ? 'active' : ''}`}
+          onClick={() => onNavigate('account-passing')}
+        >
+          <ShieldCheck size={20} />
+          Account Passing
+        </button>
+        <button 
+          className={`menu-item ${currentView === 'adding-things' ? 'active' : ''}`}
+          onClick={() => onNavigate('adding-things')}
+        >
+          <TableProperties size={20} />
+          Adding Things
         </button>
         <button 
           className={`menu-item ${currentView === 'whiteboard' ? 'active' : ''}`}

@@ -11,10 +11,12 @@ import ProfitTargetView from './components/ProfitTargetView';
 import PayoutSimulationView from './components/PayoutSimulationView';
 import RealPayoutSimulationView from './components/RealPayoutSimulationView';
 import MonthlyPayoutPlanView from './components/MonthlyPayoutPlanView';
+import AccountPassingView from './components/AccountPassingView';
+import AddingThingsView from './components/AddingThingsView';
 import WhiteboardView from './components/WhiteboardView';
 import NewsEventsView from './components/NewsEventsView';
 import { supabase } from './supabaseClient';
-import { fetchNewsEvents, seedIfEmpty, alignNewsImpacts } from './supabase/newsEventsService';
+import calendarData from './data/calendar_export_1781767459304.json';
 import { ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 
 // Weekday options configuration
@@ -317,6 +319,7 @@ function App() {
   const [excludeRed,    setExcludeRed]    = useState(false);
   const [excludeOrange, setExcludeOrange] = useState(false);
   const [excludeYellow, setExcludeYellow] = useState(false);
+  const [selectedNewsEventName, setSelectedNewsEventName] = useState('');
 
   // Global custom advanced filters (Common Months & Days of Week)
   const [commonMonthsOnly, setCommonMonthsOnly] = useState(false);
@@ -328,7 +331,7 @@ function App() {
   const [newsEvents, setNewsEvents] = useState([]);
 
   // Views where the global filter bar should appear
-  const FILTER_VIEWS = new Set(['gallery','calendar','analytics','months-performance','seasonal-tendency','all-time-curve','half-month-edge','profit-target','monthly-payout-plan']);
+  const FILTER_VIEWS = new Set(['gallery','calendar','analytics','months-performance','seasonal-tendency','all-time-curve','half-month-edge','profit-target','monthly-payout-plan','account-passing','adding-things']);
   const showFilterBar = FILTER_VIEWS.has(view);
 
   // ── Build impact date sets from newsEvents (Hierarchical & Exclusive Classification) ──
@@ -356,31 +359,30 @@ function App() {
     return { red, orange, yellow };
   }, [newsEvents]);
 
-  // ── Load news events (with auto-seed & standard alignment) ────────────────
+  // ── Load news events from JSON ──────────────────────────────────────────────
   useEffect(() => {
-    async function loadNews() {
-      try {
-        await seedIfEmpty();
-        await alignNewsImpacts(); // Auto-align existing event impacts to match red folders
-      } catch (err) {
-        console.warn('News events seeding or alignment skipped/failed (check Supabase RLS policies):', err.message);
-      }
-      try {
-        const data = await fetchNewsEvents();
-        setNewsEvents(data);
-      } catch (err) {
-        console.error('Fetching news events failed:', err.message);
-      }
-    }
-    loadNews();
+    const formattedEvents = calendarData.map(e => ({
+      id: e.sr_no,
+      date: e.news_date,
+      time: e.news_time,
+      currency: e.currency,
+      impact: (e.folder_color || 'gray').toLowerCase(),
+      name: e.news_name,
+      event_name: e.news_name, // For compatibility with NewsEventsView
+      notes: ''
+    }));
+    setNewsEvents(formattedEvents);
   }, []);
 
-  const refreshNewsEvents = async () => {
-    try {
-      const data = await fetchNewsEvents();
-      setNewsEvents(data);
-    } catch (err) { console.error(err); }
+  const refreshNewsEvents = () => {
+    // Static JSON doesn't need refresh
   };
+
+  // Extract unique news event names for the dropdown
+  const uniqueNewsEventNames = React.useMemo(() => {
+    const names = new Set(newsEvents.map(e => e.name).filter(Boolean));
+    return Array.from(names).sort();
+  }, [newsEvents]);
 
   // Fetch initial data from Supabase
   useEffect(() => {
@@ -432,13 +434,29 @@ function App() {
         }
 
         if (curvesData) {
-          const formattedData = curvesData.map(item => ({
-            id: item.id,
-            month: item.month,
-            year: item.year,
-            imageUrl: item.image_url,
-            strategy: item.strategy || 'strat_1',
-          }));
+          const formattedData = curvesData.map(item => {
+            let parsedData = [];
+            try {
+               parsedData = typeof item.data === 'string' ? JSON.parse(item.data) : (item.data || []);
+            } catch (e) {
+               console.error("Failed to parse JSON for item:", item.id);
+            }
+            
+            // LOGGING FOR DEBUG
+            const hasCustom = parsedData.some(t => t.customFields && Object.keys(t.customFields).length > 0);
+            if (hasCustom) {
+               console.log("FETCHED DATA HAS CUSTOM FIELDS FOR:", item.id, parsedData.find(t => t.customFields && Object.keys(t.customFields).length > 0).customFields);
+            }
+
+            return {
+              id: item.id,
+              month: item.month,
+              year: item.year,
+              imageUrl: item.image_url,
+              strategy: item.strategy || 'strat_1',
+              data: parsedData,
+            };
+          });
           setMonthsData(formattedData);
         }
       } catch (error) {
@@ -502,7 +520,24 @@ function App() {
         const dataForUI = monthTrades.map((t, idx) => {
           cumulativeR += (t.r_value || 0);
           cumulativeR = Math.round(cumulativeR * 100) / 100;
-          return { id: idx + 1, originalText: t.original_text, rValueStr: String(t.r_value || 0), rValue: t.r_value || 0, cumulativeR };
+          
+          let customFields = {};
+          group.curves.forEach(curveId => {
+             const curve = strategyMonthsData.find(c => c.id === curveId);
+             if (curve && curve.data) {
+                const match = curve.data.find(orig => orig.originalText === t.original_text);
+                if (match && match.customFields) customFields = { ...customFields, ...match.customFields };
+             }
+          });
+
+          return { 
+            id: idx + 1, 
+            originalText: t.original_text, 
+            rValueStr: String(t.r_value || 0), 
+            rValue: t.r_value || 0, 
+            cumulativeR,
+            customFields
+          };
         });
 
         return { ...group, data: dataForUI };
@@ -516,10 +551,42 @@ function App() {
         return 0;
       });
       let cumulativeR = 0;
+      const jsonTrades = monthEntry.data || [];
+      // Keep track of matched indices to handle duplicate exact matches
+      const usedIndices = new Set();
+
       const dataForUI = monthTrades.map((t, idx) => {
         cumulativeR += (t.r_value || 0);
         cumulativeR = Math.round(cumulativeR * 100) / 100;
-        return { id: idx + 1, originalText: t.original_text, rValueStr: String(t.r_value || 0), rValue: t.r_value || 0, cumulativeR };
+        
+        let originalTrade = null;
+        
+        // 1. Try to find the exact trade (originalText + rValue) that hasn't been used yet
+        const matchIndex = jsonTrades.findIndex((orig, i) => {
+           return !usedIndices.has(i) && 
+                  orig.originalText === t.original_text && 
+                  Number(orig.rValue || 0) === Number(t.r_value || 0);
+        });
+
+        if (matchIndex !== -1) {
+           originalTrade = jsonTrades[matchIndex];
+           usedIndices.add(matchIndex);
+        } else {
+           // Fallback to purely index-based mapping
+           originalTrade = jsonTrades[idx];
+           usedIndices.add(idx);
+        }
+        
+        const customFields = originalTrade ? (originalTrade.customFields || {}) : {};
+
+        return { 
+          id: idx + 1, 
+          originalText: t.original_text, 
+          rValueStr: String(t.r_value || 0), 
+          rValue: t.r_value || 0, 
+          cumulativeR,
+          customFields
+        };
       });
       const stratObj = strategies.find(s => s.id === monthEntry.strategy);
       const strategyName = stratObj ? stratObj.name : 'Strategy 1';
@@ -559,6 +626,14 @@ function App() {
     if (excludeRed)    result = result.filter(t => !newsDates.red.has(t.trade_date));
     if (excludeOrange) result = result.filter(t => !newsDates.orange.has(t.trade_date));
     if (excludeYellow) result = result.filter(t => !newsDates.yellow.has(t.trade_date));
+
+    // Specific News Event Filter
+    if (selectedNewsEventName) {
+      const eventDates = new Set(
+        newsEvents.filter(e => e.name === selectedNewsEventName).map(e => e.date)
+      );
+      result = result.filter(t => eventDates.has(t.trade_date));
+    }
 
     // Filter to common months across all strategies
     if (commonMonthsOnly && commonMonthKeys) {
@@ -681,6 +756,7 @@ function App() {
 
     // 2. Save to Supabase
     try {
+      console.log("UPDATING DB. DATA PAYLOAD:", JSON.stringify(updatedData.data).substring(0, 500));
       const { error } = await supabase
         .from('equity_curves')
         .update({
@@ -861,7 +937,32 @@ function App() {
             >
               🟡 Yellow News {excludeYellow ? 'Excluded' : 'Included'}
             </button>
-            {(excludeFOMC || excludeFridays || excludeRed || excludeOrange || excludeYellow) && (
+            {/* Specific Event Filter Dropdown */}
+            <select
+              value={selectedNewsEventName}
+              onChange={(e) => setSelectedNewsEventName(e.target.value)}
+              style={{
+                padding: '5px 10px',
+                borderRadius: '20px',
+                border: '1px solid #e5e7eb',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                color: selectedNewsEventName ? '#fff' : '#6b7280',
+                backgroundColor: selectedNewsEventName ? 'var(--primary)' : '#f3f4f6',
+                outline: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: selectedNewsEventName ? '0 2px 8px rgba(67,198,172,0.35)' : 'none',
+                maxWidth: '220px'
+              }}
+            >
+              <option value="">📰 All Events</option>
+              {uniqueNewsEventNames.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+
+            {(excludeFOMC || excludeFridays || excludeRed || excludeOrange || excludeYellow || selectedNewsEventName) && (
               <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: 4 }}>
                 {[
                   excludeFOMC && 'FOMC',
@@ -869,7 +970,9 @@ function App() {
                   excludeRed && 'Red News',
                   excludeOrange && 'Orange News',
                   excludeYellow && 'Yellow News'
-                ].filter(Boolean).join(' + ')} removed from stats
+                ].filter(Boolean).join(' + ')}
+                {((excludeFOMC || excludeFridays || excludeRed || excludeOrange || excludeYellow) ? ' removed' : '')}
+                {selectedNewsEventName && ` (Only showing: ${selectedNewsEventName})`}
               </span>
             )}
 
@@ -966,6 +1069,20 @@ function App() {
 
         {view === 'monthly-payout-plan' && (
           <MonthlyPayoutPlanView tradesData={filteredTradesData} />
+        )}
+
+        {view === 'account-passing' && (
+          <AccountPassingView monthsData={filteredEnrichedMonthsData} />
+        )}
+
+        {view === 'adding-things' && (
+          <AddingThingsView 
+            monthsData={enrichedMonthsData} 
+            strategies={strategies}
+            activeStrategy={activeStrategy}
+            setActiveStrategy={setActiveStrategy}
+            onUpdateData={handleUpdateData}
+          />
         )}
 
         {view === 'whiteboard' && (
